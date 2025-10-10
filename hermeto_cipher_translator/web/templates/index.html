@@ -1764,7 +1764,27 @@
         // Piano de C2 até B6 (5 oitavas completas)
         const octaves = [2, 3, 4, 5, 6]; // Oitavas 2, 3, 4, 5 e 6 (C2 até B6)
         const whiteNotesPerOctave = ["C", "D", "E", "F", "G", "A", "B"];
-        const blackNotesPerOctave = ["C#", "D#", "F#", "G#", "A#"];
+        // Detectar se o acorde tem root bemol
+        let isFlatChord = false;
+        // Tenta obter o root do acorde a partir do container dataset (ou global)
+        let chordRoot = null;
+        if (container && container.dataset && container.dataset.chordRoot) {
+          chordRoot = container.dataset.chordRoot;
+        } else if (window.chordRoot) {
+          chordRoot = window.chordRoot;
+        } else {
+          // Fallback: tenta pegar a primeira nota da mão direita
+          if (rightHand.length > 0) {
+            chordRoot = rightHand[0].name;
+          }
+        }
+        if (chordRoot && /[A-G]b/.test(chordRoot)) {
+          isFlatChord = true;
+        }
+        // Se for acorde bemol, usa nomes bemóis para as teclas pretas
+        const blackNotesPerOctave = isFlatChord
+          ? ["Db", "Eb", "Gb", "Ab", "Bb"]
+          : ["C#", "D#", "F#", "G#", "A#"];
 
         // Gerar todas as teclas brancas
         let whiteKeys = [];

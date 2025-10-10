@@ -163,7 +163,19 @@ class NoteGenerator:
         # Calcular nota alvo
         root_semitone = self.note_to_semitone[root_note]
         target_semitone = (root_semitone + semitones) % 12
-        target_note_name = self.semitone_to_note[target_semitone][0]
+        # Priorizar bemol se root_note for bemol
+        note_names = self.semitone_to_note[target_semitone]
+        # Se root_note tem 'b' (bemol), sempre priorize bemol
+        if 'b' in root_note and len(note_names) > 1:
+            # Se houver bemol disponível, escolha sempre o bemol
+            target_note_name = next(
+                (n for n in note_names if 'b' in n), note_names[-1])
+        elif 'b' in root_note:
+            # Se root_note tem 'b' mas não há bemol disponível, mantenha o nome padrão
+            target_note_name = note_names[-1]
+        else:
+            # Caso contrário, escolha o primeiro nome (padrão)
+            target_note_name = note_names[0]
 
         # Calcular oitava corretamente
         octave_adjustment = (root_semitone + semitones) // 12
