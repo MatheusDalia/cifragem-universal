@@ -1,0 +1,1962 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Tradutor de Cifras Herméticas - Hermeto Pascoal</title>
+
+    <!-- OpenSheetMusicDisplay -->
+    <script src="https://cdn.jsdelivr.net/npm/opensheetmusicdisplay@1.8.7/build/opensheetmusicdisplay.min.js"></script>
+
+    <!-- HTML MIDI Player para Audio -->
+    <script src="https://cdn.jsdelivr.net/combine/npm/tone@14.7.58,npm/@magenta/music@1.23.1/es6/core.js,npm/html-midi-player@1.6.0"></script>
+
+    <!-- Piano Visualizer simples -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+        color: #333;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+        color: white;
+      }
+
+      .header h1 {
+        font-size: 2.5em;
+        margin-bottom: 10px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .header p {
+        font-size: 1.2em;
+        opacity: 0.9;
+      }
+
+      .main-card {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        margin-bottom: 20px;
+      }
+
+      .input-section {
+        margin-bottom: 30px;
+      }
+
+      .input-group {
+        margin-bottom: 20px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #555;
+      }
+
+      .cipher-input {
+        width: 100%;
+        padding: 15px;
+        border: 2px solid #ddd;
+        border-radius: 8px;
+        font-size: 18px;
+        font-family: "Courier New", monospace;
+        transition: border-color 0.3s;
+      }
+
+      .cipher-input:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 10px rgba(102, 126, 234, 0.2);
+      }
+
+      .button-group {
+        display: flex;
+        gap: 15px;
+        flex-wrap: wrap;
+      }
+
+      .btn {
+        padding: 12px 24px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-decoration: none;
+        display: inline-block;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .btn-secondary {
+        background: #f8f9fa;
+        color: #333;
+        border: 2px solid #ddd;
+      }
+
+      .btn-secondary:hover {
+        background: #e9ecef;
+        border-color: #adb5bd;
+      }
+
+      .result-section {
+        margin-top: 30px;
+        display: none;
+      }
+
+      .result-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 20px;
+        margin-bottom: 15px;
+      }
+
+      .result-title {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 10px;
+      }
+
+      .chord-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .info-card {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        border-left: 4px solid #667eea;
+      }
+
+      .info-title {
+        font-weight: 600;
+        color: #667eea;
+        margin-bottom: 8px;
+      }
+
+      .note-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .note {
+        background: #667eea;
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .examples-section {
+        margin-top: 30px;
+      }
+
+      .examples-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+      }
+
+      .example-card {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+
+      .example-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        border-color: #667eea;
+      }
+
+      .example-cipher {
+        font-family: "Courier New", monospace;
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 8px;
+      }
+
+      .example-type {
+        background: #667eea;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        display: inline-block;
+        margin-bottom: 8px;
+      }
+
+      .example-description {
+        color: #666;
+        font-size: 14px;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid #f3f3f3;
+        border-top: 4px solid #667eea;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 10px;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      .error {
+        background: #f8d7da;
+        color: #721c24;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #f5c6cb;
+        margin-top: 15px;
+      }
+
+      .success {
+        background: #d1edff;
+        color: #0c5460;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #bee5eb;
+        margin-top: 15px;
+      }
+
+      .sheet-music-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+      }
+
+      .sheet-music-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #dee2e6;
+      }
+
+      .sheet-music-header h3 {
+        margin: 0;
+        color: #333;
+        font-size: 1.3rem;
+      }
+
+      .sheet-music-container {
+        text-align: center;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        overflow-x: auto;
+      }
+
+      .sheet-music-container svg {
+        max-width: 100%;
+        height: auto;
+      }
+
+      .professional-score-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+      }
+
+      .professional-score-container {
+        text-align: center;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        overflow-x: auto;
+        min-height: 200px; /* Altura mínima reduzida */
+        max-height: 400px; /* Altura máxima para evitar partituras muito grandes */
+      }
+
+      .professional-score-container canvas,
+      .professional-score-container svg {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        max-height: 350px; /* Limitar altura do SVG/Canvas */
+      }
+
+      /* Estilos específicos para elementos do OpenSheetMusicDisplay */
+      #osmd-container {
+        width: 100% !important;
+        max-width: 800px !important; /* Largura máxima para evitar muito espaço em branco */
+        margin: 0 auto !important;
+        overflow: hidden !important;
+      }
+
+      #osmd-container svg {
+        width: 100% !important;
+        height: auto !important;
+        max-height: 350px !important;
+      }
+
+      /* Audio Player Styles */
+      .audio-player-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f0f8ff;
+        border-radius: 12px;
+        border: 1px solid #b8daff;
+      }
+
+      .audio-player-container {
+        text-align: center;
+        padding: 15px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        min-height: 80px;
+      }
+
+      /* Estilos para o player MIDI simples */
+      midi-player {
+        display: block;
+        width: 100%;
+        margin: 10px 0;
+        max-width: 400px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      /* Estilos SIMPLES para visualização do piano */
+      .piano-visualization-section {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 1px solid #dee2e6;
+      }
+
+      .piano-container {
+        text-align: center;
+        padding: 20px;
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        overflow-x: auto;
+        max-width: 100%;
+      }
+
+      /* Tabela simples de notas */
+      .notes-table {
+        width: 100%;
+        max-width: 600px;
+        margin: 0 auto;
+        border-collapse: collapse;
+        font-family: "Courier New", monospace;
+      }
+
+      .notes-table th {
+        background: #6c757d;
+        color: white;
+        padding: 12px;
+        font-weight: bold;
+        border: 1px solid #495057;
+      }
+
+      .notes-table td {
+        padding: 10px;
+        border: 1px solid #dee2e6;
+        text-align: center;
+        font-size: 16px;
+        font-weight: bold;
+      }
+
+      .note-right-hand {
+        background: #e3f2fd;
+        color: #1976d2;
+      }
+
+      .note-left-hand {
+        background: #f3e5f5;
+        color: #7b1fa2;
+      }
+
+      /* Piano SVG simples */
+      #simple-piano-svg {
+        max-width: 100%;
+        height: auto;
+        margin: 20px 0;
+        border: 2px solid #333;
+        border-radius: 8px;
+        background: white;
+      }
+
+      .piano-key-white {
+        fill: white;
+        stroke: #333;
+        stroke-width: 1;
+        cursor: pointer;
+      }
+
+      .piano-key-black {
+        fill: #333;
+        stroke: #000;
+        stroke-width: 1;
+        cursor: pointer;
+      }
+
+      .piano-key-active-right {
+        fill: #2196f3 !important;
+      }
+
+      .piano-key-active-left {
+        fill: #9c27b0 !important;
+      }
+
+      .piano-legend {
+        display: flex;
+        justify-content: center;
+        gap: 30px;
+        margin-top: 15px;
+        padding: 10px;
+        background: #f8f9fa;
+        border-radius: 6px;
+      }
+
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      .legend-color {
+        width: 20px;
+        height: 12px;
+        border-radius: 3px;
+        border: 1px solid #ccc;
+      }
+
+      .legend-color.right-hand {
+        background: #2196f3;
+      }
+
+      .legend-color.left-hand {
+        background: #9c27b0;
+      }
+
+      .simple-notation-card {
+        margin-top: 20px;
+        padding: 20px;
+        background: #f0f8ff;
+        border-radius: 12px;
+        border: 2px solid #4169e1;
+        box-shadow: 0 4px 8px rgba(65, 105, 225, 0.1);
+        display: block !important;
+        visibility: visible !important;
+        width: 100%;
+      }
+
+      .simple-notation-card h3 {
+        color: #4169e1;
+        text-align: center;
+        margin-bottom: 20px;
+        font-size: 1.4rem;
+      }
+
+      .hands-display {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        margin-bottom: 20px;
+      }
+
+      .hand-section {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .hand-section h4 {
+        color: #333;
+        margin-bottom: 10px;
+        text-align: center;
+        font-size: 1.1rem;
+      }
+
+      .notes-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        justify-content: center;
+      }
+
+      .simple-note {
+        background: #4169e1;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 20px;
+        font-weight: bold;
+        font-size: 1.1rem;
+        text-align: center;
+        min-width: 40px;
+        box-shadow: 0 2px 4px rgba(65, 105, 225, 0.3);
+      }
+
+      .play-instruction {
+        background: #fff3cd;
+        color: #856404;
+        padding: 12px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #ffeaa7;
+        font-size: 0.95rem;
+      }
+
+      @media (max-width: 768px) {
+        .button-group {
+          flex-direction: column;
+        }
+
+        .btn {
+          text-align: center;
+        }
+
+        .chord-info {
+          grid-template-columns: 1fr;
+        }
+
+        .hands-display {
+          grid-template-columns: 1fr;
+          gap: 15px;
+        }
+
+        .sheet-music-header {
+          flex-direction: column;
+          gap: 10px;
+          align-items: flex-start;
+        }
+
+        .sheet-music-header .button-group {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="header">
+        <h1>🎼 Tradutor de Cifras Herméticas</h1>
+        <p>
+          Sistema de tradução das cifras únicas do Hermeto Pascoal para
+          partitura de piano
+        </p>
+        <div style="margin-top: 20px">
+          <a
+            href="/progression"
+            class="btn"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              text-decoration: none;
+              margin-right: 10px;
+            "
+          >
+            <i class="fas fa-list"></i> Progressões Harmônicas
+          </a>
+          <a
+            href="/ocr"
+            class="btn"
+            style="
+              background: rgba(255, 255, 255, 0.2);
+              color: white;
+              text-decoration: none;
+              margin-right: 10px;
+            "
+          >
+            <i class="fas fa-camera"></i> OCR de Partituras
+          </a>
+        </div>
+      </header>
+
+      <div class="main-card">
+        <div class="input-section">
+          <div class="input-group">
+            <label for="cipher-input">Digite a Cifra Hermética:</label>
+            <input
+              type="text"
+              id="cipher-input"
+              class="cipher-input"
+              placeholder="Ex: C458/A5+7, D7+, Em7/Ab6..."
+              autocomplete="off"
+            />
+          </div>
+
+          <div class="button-group">
+            <button class="btn btn-primary" onclick="translateCipher()">
+              🎵 Traduzir para JSON
+            </button>
+            <button class="btn btn-primary" onclick="showProfessionalScore()">
+              🎼 Partitura e Piano
+            </button>
+            <button class="btn btn-primary" onclick="generateMusicXML()">
+              📄 Baixar XML
+            </button>
+            <button class="btn btn-primary" onclick="downloadScore('midi')">
+              🎹 Baixar MIDI
+            </button>
+          </div>
+        </div>
+
+        <div class="loading" id="loading">
+          <div class="spinner"></div>
+          <p>Processando cifra...</p>
+        </div>
+
+        <div class="result-section" id="result-section">
+          <div id="result-content"></div>
+        </div>
+
+        <div
+          class="sheet-music-section"
+          id="sheet-music-section"
+          style="display: none"
+        >
+          <div class="sheet-music-header">
+            <h3>🎼 Partitura Gerada</h3>
+            <div class="button-group">
+              <button class="btn btn-secondary" onclick="downloadScore('png')">
+                💾 Baixar PNG
+              </button>
+              <button class="btn btn-secondary" onclick="downloadScore('midi')">
+                💾 Baixar MIDI
+              </button>
+            </div>
+          </div>
+          <div class="sheet-music-container">
+            <!-- Conteúdo será inserido dinamicamente -->
+            <div style="text-align: center; padding: 40px; color: #666">
+              <p>
+                🎼 Digite uma cifra e clique em "Traduzir" para ver a partitura
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="professional-score-section"
+          id="professional-score-section"
+          style="display: none"
+        >
+          <div class="sheet-music-header">
+            <h3>🎼 Partitura e Piano</h3>
+            <div class="button-group">
+              <button class="btn btn-secondary" onclick="downloadScore('png')">
+                💾 Baixar PNG
+              </button>
+              <button class="btn btn-secondary" onclick="generateMusicXML()">
+                📄 Baixar XML
+              </button>
+            </div>
+          </div>
+          <div
+            class="professional-score-container"
+            id="professional-score-container"
+          >
+            <!-- Partitura profissional será renderizada aqui -->
+            <div style="text-align: center; padding: 40px; color: #666">
+              <p>
+                🎼 Digite uma cifra e clique em "Partitura Profissional" para
+                ver a renderização de alta qualidade
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção do Player de Áudio -->
+        <div
+          class="audio-player-section"
+          id="audio-player-section"
+          style="display: none"
+        >
+          <div class="sheet-music-header">
+            <h3>🔊 Player de Áudio</h3>
+            <div class="button-group">
+              <button class="btn btn-success" id="toggle-audio-player">
+                ▶️ Tocar Acorde
+              </button>
+            </div>
+          </div>
+          <div class="audio-player-container" id="audio-player-container">
+            <!-- Player de áudio será inserido aqui -->
+            <div style="text-align: center; padding: 40px; color: #666">
+              <p>
+                🔊 O player de áudio aparecerá automaticamente quando você gerar
+                uma partitura profissional
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seção SIMPLES de Visualização do Piano -->
+        <div
+          class="piano-visualization-section"
+          id="piano-visualization-section"
+          style="display: none"
+        >
+          <div class="piano-container" id="piano-container">
+            <!-- Conteúdo será gerado dinamicamente -->
+          </div>
+        </div>
+      </div>
+
+      <div class="main-card examples-section">
+        <h2>📚 Exemplos de Cifras Herméticas</h2>
+        <p>Clique em qualquer exemplo para testá-lo:</p>
+
+        <div class="examples-grid" id="examples-grid">
+          <!-- Exemplos serão carregados via JavaScript -->
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Carregar exemplos ao inicializar a página
+      document.addEventListener("DOMContentLoaded", function () {
+        loadExamples();
+      });
+      // Função para traduzir cifra
+      async function translateCipher() {
+        const cipher = document.getElementById("cipher-input").value.trim();
+        if (!cipher) {
+          showError("Por favor, digite uma cifra hermética.");
+          return;
+        }
+
+        showLoading(true);
+
+        try {
+          const response = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: "json",
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            showTranslationResult(data);
+          } else {
+            showError(data.error || "Erro na tradução");
+          }
+        } catch (error) {
+          showError("Erro de conexão: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // Função para baixar partitura
+      async function downloadScore(format) {
+        const cipher = document.getElementById("cipher-input").value.trim();
+        if (!cipher) {
+          showError("Por favor, digite uma cifra hermética.");
+          return;
+        }
+
+        showLoading(true);
+
+        try {
+          const response = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: format,
+            }),
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${cipher}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showSuccess(`Arquivo ${format.toUpperCase()} baixado com sucesso!`);
+          } else {
+            const errorData = await response.json();
+            showError(errorData.error || "Erro no download");
+          }
+        } catch (error) {
+          showError("Erro de conexão: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // Função para gerar MusicXML
+      async function generateMusicXML() {
+        const cipher = document.getElementById("cipher-input").value.trim();
+        if (!cipher) {
+          showError("Por favor, digite uma cifra hermética.");
+          return;
+        }
+
+        showLoading(true);
+
+        try {
+          const response = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: "xml",
+            }),
+          });
+
+          if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${cipher}_partitura.xml`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showSuccess(
+              `Partitura MusicXML baixada! Abra "${cipher}_partitura.xml" no MuseScore para visualizar.`
+            );
+          } else {
+            const errorData = await response.json();
+            showError(errorData.error || "Erro ao gerar MusicXML");
+          }
+        } catch (error) {
+          showError("Erro de conexão: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // Função para carregar exemplos
+      async function loadExamples() {
+        try {
+          const response = await fetch("/examples");
+          const data = await response.json();
+
+          displayExamples(data.examples);
+        } catch (error) {
+          console.error("Erro ao carregar exemplos:", error);
+        }
+      }
+
+      // Exibir exemplos
+      function displayExamples(examples) {
+        const grid = document.getElementById("examples-grid");
+        grid.innerHTML = "";
+
+        for (const [type, chords] of Object.entries(examples)) {
+          for (const [cipher, data] of Object.entries(chords)) {
+            const card = document.createElement("div");
+            card.className = "example-card";
+            card.onclick = () => {
+              document.getElementById("cipher-input").value = cipher;
+              translateCipher();
+            };
+
+            card.innerHTML = `
+                        <div class="example-cipher">${cipher}</div>
+                        <div class="example-type">${type}</div>
+                        <div class="example-description">${data.description}</div>
+                    `;
+
+            grid.appendChild(card);
+          }
+        }
+      }
+
+      // Exibir resultado da tradução
+      function showTranslationResult(data) {
+        const resultSection = document.getElementById("result-section");
+        const resultContent = document.getElementById("result-content");
+
+        const translation = data.translation;
+
+        resultContent.innerHTML = `
+                <div class="result-card">
+                    <div class="result-title">🎼 Tradução da Cifra: ${
+                      data.cipher
+                    }</div>
+                    
+                    <div class="chord-info">
+                        <div class="info-card">
+                            <div class="info-title">Tipo de Acorde</div>
+                            <div>${translation.type}</div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <div class="info-title">Total de Notas</div>
+                            <div>${translation.total_notes}</div>
+                        </div>
+                      
+                        
+                        <div class="info-card">
+                            <div class="info-title">Mão Esquerda (Clave de Fá)</div>
+                            <div class="note-list">
+                                ${translation.left_hand
+                                  .map(
+                                    (note) =>
+                                      `<span class="note">${
+                                        typeof note === "object"
+                                          ? note.name + note.octave
+                                          : note
+                                      }</span>`
+                                  )
+                                  .join("")}
+                            </div>
+                        </div>
+
+
+                        <div class="info-card">
+                            <div class="info-title">Mão Direita (Clave de Sol)</div>
+                            <div class="note-list">
+                                ${translation.right_hand
+                                  .map(
+                                    (note) =>
+                                      `<span class="note">${
+                                        typeof note === "object"
+                                          ? note.name + note.octave
+                                          : note
+                                      }</span>`
+                                  )
+                                  .join("")}
+                            </div>
+                        </div>
+                        
+                        <div class="info-card">
+                            <div class="info-title">Intervalos</div>
+                            <div class="note-list">
+                                ${translation.intervals
+                                  .map(
+                                    (interval) =>
+                                      `<span class="note">${
+                                        typeof interval === "object"
+                                          ? interval.name ||
+                                            interval.symbol ||
+                                            JSON.stringify(interval)
+                                          : interval
+                                      }</span>`
+                                  )
+                                  .join("")}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        resultSection.style.display = "block";
+      }
+
+      // Função para gerar e exibir visualização da partitura
+      async function generateSheetMusicVisualization(cipher) {
+        if (!cipher) {
+          cipher = document.getElementById("cipher-input").value.trim();
+        }
+
+        if (!cipher) {
+          return;
+        }
+
+        const sheetMusicSection = document.getElementById(
+          "sheet-music-section"
+        );
+        const sheetMusicContainer = document.querySelector(
+          ".sheet-music-container"
+        );
+
+        try {
+          // Mostrar seção de partitura
+          sheetMusicSection.style.display = "block";
+
+          // Mostrar loading
+          sheetMusicContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px; color: #666;">
+              <div class="spinner" style="display: inline-block;"></div>
+              <p>🎼 Gerando visualização da partitura...</p>
+            </div>
+          `;
+
+          const response = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: "html_visual",
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success && data.html_content) {
+            // Exibir visualização HTML personalizada
+            sheetMusicContainer.innerHTML = data.html_content;
+          } else {
+            // Tentar PNG como fallback
+            await tryPngFallback(cipher, sheetMusicContainer);
+          }
+        } catch (error) {
+          // Mostrar erro
+          sheetMusicContainer.innerHTML = `
+            <div style="text-align: center; padding: 40px; background: #f8d7da; border-radius: 8px; color: #721c24;">
+              <h4>❌ Erro de conexão</h4>
+              <p>${error.message}</p>
+            </div>
+          `;
+        }
+      }
+
+      // Função fallback para PNG
+      async function tryPngFallback(cipher, container) {
+        try {
+          const response = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: "png_base64",
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success && data.image_base64) {
+            container.innerHTML = `
+              <img src="data:${data.mime_type};base64,${data.image_base64}" 
+                   alt="Partitura para cifra: ${cipher}"
+                   style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);" />
+            `;
+          } else {
+            throw new Error(data.error || "Erro na geração PNG");
+          }
+        } catch (error) {
+          container.innerHTML = `
+            <div style="text-align: center; padding: 40px; background: #f8d7da; border-radius: 8px; color: #721c24;">
+              <h4>❌ Erro ao gerar visualização</h4>
+              <p>${error.message}</p>
+              <p><small>Tentativa de PNG falhou. Verifique os logs do servidor.</small></p>
+            </div>
+          `;
+        }
+      }
+
+      // Função para mostrar partitura simples
+      async function showSheetMusic() {
+        const cipher = document.getElementById("cipher-input").value.trim();
+        if (!cipher) {
+          showError("Por favor, digite uma cifra hermética.");
+          return;
+        }
+
+        showLoading(true);
+
+        try {
+          // Primeiro, obter informações da cifra
+          const response = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: "json",
+            }),
+          });
+
+          const data = await response.json();
+
+          if (response.ok && data.success) {
+            const translation = data.translation;
+
+            // Gerar SVG da partitura
+            const svgContent = generateSimpleSVGScore(translation, cipher);
+
+            // Mostrar a partitura
+            const sheetMusicSection = document.getElementById(
+              "sheet-music-section"
+            );
+            const sheetMusicContainer = document.querySelector(
+              ".sheet-music-container"
+            );
+
+            sheetMusicSection.style.display = "block";
+            sheetMusicContainer.innerHTML = svgContent;
+
+            showSuccess("Partitura gerada com sucesso!");
+          } else {
+            showError(data.error || "Erro na tradução");
+          }
+        } catch (error) {
+          showError("Erro de conexão: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // Função para gerar SVG simples da partitura
+      function generateSimpleSVGScore(translation, cipher) {
+        const width = 800;
+        const height = 400;
+
+        // Posições das linhas da pauta
+        const trebleStaffY = 80;
+        const bassStaffY = 220;
+        const staffWidth = 600;
+        const staffStartX = 100;
+
+        let svg = `<svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg" style="background: white; border: 1px solid #ddd; border-radius: 8px;">`;
+
+        // Título
+        svg += `<text x="${
+          width / 2
+        }" y="30" text-anchor="middle" font-family="serif" font-size="18" font-weight="bold" fill="#333">Cifra: ${cipher} (${
+          translation.type
+        })</text>`;
+
+        // Clave de Sol (Treble)
+        svg += drawStaff(staffStartX, trebleStaffY, staffWidth);
+        svg += `<text x="50" y="${
+          trebleStaffY + 25
+        }" font-family="serif" font-size="36" fill="#1a73e8">𝄞</text>`;
+        svg += `<text x="20" y="${
+          trebleStaffY - 10
+        }" font-family="sans-serif" font-size="12" fill="#666">Mão Direita</text>`;
+
+        // Clave de Fá (Bass)
+        svg += drawStaff(staffStartX, bassStaffY, staffWidth);
+        svg += `<text x="50" y="${
+          bassStaffY + 25
+        }" font-family="serif" font-size="36" fill="#d93025">𝄢</text>`;
+        svg += `<text x="20" y="${
+          bassStaffY - 10
+        }" font-family="sans-serif" font-size="12" fill="#666">Mão Esquerda</text>`;
+
+        // Notas da mão direita (todas na mesma posição X - acorde)
+        const trebleChordX = 200;
+        if (translation.right_hand.length > 0) {
+          const trebleNotes = translation.right_hand.map((note) => {
+            const noteName =
+              typeof note === "object" ? `${note.name}${note.octave}` : note;
+            return {
+              name: noteName,
+              y: getNotePosition(noteName, "treble", trebleStaffY),
+            };
+          });
+          svg += drawChord(trebleChordX, trebleNotes, trebleStaffY, "#1a73e8");
+        }
+
+        // Notas da mão esquerda (todas na mesma posição X - acorde)
+        const bassChordX = 200;
+        if (translation.left_hand.length > 0) {
+          const bassNotes = translation.left_hand.map((note) => {
+            const noteName =
+              typeof note === "object" ? `${note.name}${note.octave}` : note;
+            return {
+              name: noteName,
+              y: getNotePosition(noteName, "bass", bassStaffY),
+            };
+          });
+          svg += drawChord(bassChordX, bassNotes, bassStaffY, "#d93025");
+        }
+
+        // Informações adicionais
+        svg += `<text x="50" y="${
+          height - 60
+        }" font-family="sans-serif" font-size="12" fill="#666">Total de notas: ${
+          translation.total_notes
+        }</text>`;
+        svg += `<text x="50" y="${
+          height - 40
+        }" font-family="sans-serif" font-size="12" fill="#666">Intervalos: ${translation.intervals
+          .map((i) =>
+            typeof i === "object" ? i.name || i.symbol || JSON.stringify(i) : i
+          )
+          .join(", ")}</text>`;
+
+        svg += "</svg>";
+        return svg;
+      }
+
+      // Função para desenhar uma pauta (5 linhas)
+      function drawStaff(x, y, width) {
+        let lines = "";
+        for (let i = 0; i < 5; i++) {
+          const lineY = y + i * 10;
+          lines += `<line x1="${x}" y1="${lineY}" x2="${
+            x + width
+          }" y2="${lineY}" stroke="#333" stroke-width="1"/>`;
+        }
+        return lines;
+      }
+
+      // Função para calcular posição Y da nota na pauta
+      function getNotePosition(noteName, clefType, staffY) {
+        // Extrair nota e oitava
+        const match = noteName.match(/([A-G][#b]?)(\d+)/);
+        if (!match) return staffY + 20; // posição padrão se não conseguir parsear
+
+        const [, note, octave] = match;
+        const octaveNum = parseInt(octave);
+
+        // Mapeamento das notas para posições na pauta (em semitons desde C0)
+        const noteToSemitone = {
+          C: 0,
+          "C#": 1,
+          Db: 1,
+          D: 2,
+          "D#": 3,
+          Eb: 3,
+          E: 4,
+          F: 5,
+          "F#": 6,
+          Gb: 6,
+          G: 7,
+          "G#": 8,
+          Ab: 8,
+          A: 9,
+          "A#": 10,
+          Bb: 10,
+          B: 11,
+        };
+
+        const noteSemitone = octaveNum * 12 + (noteToSemitone[note] || 0);
+
+        if (clefType === "treble") {
+          // Clave de Sol: B4 fica na linha do meio (staffY + 20)
+          const referenceSemitone = 4 * 12 + 11; // B4 = 59
+          const offset = (referenceSemitone - noteSemitone) * 2.5;
+          return staffY + 20 + offset;
+        } else {
+          // Clave de Fá: D3 fica na linha do meio (staffY + 20)
+          const referenceSemitone = 3 * 12 + 2; // D3 = 38
+          const offset = (referenceSemitone - noteSemitone) * 2.5;
+          return staffY + 20 + offset;
+        }
+      }
+
+      // Função para desenhar um acorde (múltiplas notas na mesma posição X)
+      function drawChord(x, notes, staffY, color) {
+        let chordSvg = "";
+
+        // Calcular quais linhas suplementares são necessárias
+        const allYPositions = notes.map((note) => note.y);
+        const minY = Math.min(...allYPositions);
+        const maxY = Math.max(...allYPositions);
+
+        // Definir limites da pauta (5 linhas)
+        const staffTop = staffY; // Linha superior da pauta
+        const staffBottom = staffY + 40; // Linha inferior da pauta
+
+        // Linhas suplementares acima da pauta
+        if (minY < staffTop) {
+          for (let lineY = staffTop - 10; lineY >= minY - 5; lineY -= 10) {
+            chordSvg += `<line x1="${x - 15}" y1="${lineY}" x2="${
+              x + 15
+            }" y2="${lineY}" stroke="#333" stroke-width="1"/>`;
+          }
+        }
+
+        // Linhas suplementares abaixo da pauta
+        if (maxY > staffBottom) {
+          for (let lineY = staffBottom + 10; lineY <= maxY + 5; lineY += 10) {
+            chordSvg += `<line x1="${x - 15}" y1="${lineY}" x2="${
+              x + 15
+            }" y2="${lineY}" stroke="#333" stroke-width="1"/>`;
+          }
+        }
+
+        // Desenhar as notas do acorde (sem labels)
+        notes.forEach((note) => {
+          chordSvg += `<ellipse cx="${x}" cy="${note.y}" rx="8" ry="6" fill="${color}" stroke="#000" stroke-width="1"/>`;
+        });
+
+        return chordSvg;
+      }
+
+      // Função para desenhar uma nota individual (mantida para compatibilidade)
+      function drawNote(x, y, name, color) {
+        return `<ellipse cx="${x}" cy="${y}" rx="8" ry="6" fill="${color}" stroke="#000" stroke-width="1"/>`;
+      }
+
+      // Função para mostrar partitura profissional com OpenSheetMusicDisplay
+      async function showProfessionalScore() {
+        const cipher = document.getElementById("cipher-input").value.trim();
+        if (!cipher) {
+          showError("Por favor, digite uma cifra hermética.");
+          return;
+        }
+
+        showLoading(true);
+
+        try {
+          // Obter o MusicXML da cifra
+          const response = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: "xml_text",
+            }),
+          });
+
+          if (response.ok) {
+            const data = await response.json();
+
+            if (!data.success || !data.xml_content) {
+              throw new Error(data.error || "Erro ao obter MusicXML");
+            }
+
+            const xmlText = data.xml_content;
+
+            // Mostrar a seção profissional
+            const professionalSection = document.getElementById(
+              "professional-score-section"
+            );
+            const container = document.getElementById(
+              "professional-score-container"
+            );
+
+            professionalSection.style.display = "block";
+
+            // Limpar container
+            container.innerHTML =
+              '<div style="text-align: center; padding: 20px;"><p>🎼 Renderizando partitura profissional...</p></div>';
+
+            // Criar div para o OpenSheetMusicDisplay
+            const osmdDiv = document.createElement("div");
+            osmdDiv.id = "osmd-container";
+            osmdDiv.style.width = "100%";
+            osmdDiv.style.minHeight = "400px";
+            container.innerHTML = "";
+            container.appendChild(osmdDiv);
+
+            // Inicializar OpenSheetMusicDisplay
+            const osmd = new opensheetmusicdisplay.OpenSheetMusicDisplay(
+              osmdDiv,
+              {
+                autoResize: true,
+                backend: "svg",
+                drawTitle: false, // Remover título para economizar espaço
+                drawComposer: false, // Remover compositor para economizar espaço
+                drawCredits: false,
+                pageBackgroundColor: "#FFFFFF",
+                pageFormat: "Compact", // Formato compacto ao invés de A4
+                renderSingleHorizontalStaffline: true, // Uma linha horizontal única
+                drawPartNames: true, // Mostrar nomes das partes (Mão Direita/Esquerda)
+                drawMeasureNumbers: false, // Remover números de compasso
+                drawTimeSignatures: false, // Remover indicação de tempo para acordes simples
+                drawKeySignatures: false, // Remover armadura para acordes simples
+                pageTopMargin: 10, // Margens menores
+                pageBottomMargin: 10,
+                pageLeftMargin: 10,
+                pageRightMargin: 10,
+                compactMode: true, // Modo compacto
+                measureMinWidth: 50, // Largura mínima de compasso menor
+              }
+            );
+
+            // Carregar e renderizar o MusicXML
+            await osmd.load(xmlText);
+            osmd.render();
+
+            // Recortar partitura para remover espaço em branco excessivo
+            setTimeout(() => {
+              cropScoreToContent();
+            }, 500);
+
+            // Gerar Player de Áudio simples
+            await generateSimpleAudioPlayer(cipher);
+
+            showSuccess(
+              "Partitura profissional e piano roll renderizados com sucesso!"
+            );
+          } else {
+            const errorData = await response.json();
+            showError(
+              errorData.error || "Erro ao gerar MusicXML para renderização"
+            );
+          }
+        } catch (error) {
+          console.error("Erro detalhado:", error);
+          showError("Erro ao renderizar partitura: " + error.message);
+        } finally {
+          showLoading(false);
+        }
+      }
+
+      // Função para gerar Player de Áudio simples
+      async function generateSimpleAudioPlayer(cipher) {
+        try {
+          // Obter dados MIDI do backend
+          const midiResponse = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: "midi",
+            }),
+          });
+
+          if (!midiResponse.ok) {
+            console.warn("Erro ao obter MIDI para player");
+            return;
+          }
+
+          const midiBlob = await midiResponse.blob();
+          const midiUrl = URL.createObjectURL(midiBlob);
+
+          // Mostrar seção do player
+          const audioSection = document.getElementById("audio-player-section");
+          const audioContainer = document.getElementById(
+            "audio-player-container"
+          );
+
+          audioSection.style.display = "block";
+
+          // Criar player simples
+          audioContainer.innerHTML = `
+            <midi-player 
+              src="${midiUrl}" 
+              sound-font="https://storage.googleapis.com/magentadata/js/soundfonts/sgm_plus"
+              id="simple-midi-player">
+            </midi-player>
+          `;
+
+          // Configurar botão de controle
+          setupSimpleAudioControls();
+
+          // Obter dados das notas para visualização do piano
+          await generatePianoVisualization(cipher);
+        } catch (error) {
+          console.error("Erro ao gerar player de áudio:", error);
+        }
+      }
+
+      // Configurar controles simples do player de áudio
+      function setupSimpleAudioControls() {
+        const toggleBtn = document.getElementById("toggle-audio-player");
+        const player = document.getElementById("simple-midi-player");
+
+        if (player && toggleBtn) {
+          toggleBtn.onclick = () => {
+            if (player.playing) {
+              player.stop();
+              toggleBtn.textContent = "▶️ Tocar Acorde";
+              toggleBtn.className = "btn btn-success";
+            } else {
+              player.start();
+              toggleBtn.textContent = "⏹️ Parar";
+              toggleBtn.className = "btn btn-warning";
+            }
+          };
+
+          // Event listeners para sincronizar o botão
+          player.addEventListener("start", () => {
+            toggleBtn.textContent = "⏹️ Parar";
+            toggleBtn.className = "btn btn-warning";
+          });
+
+          player.addEventListener("stop", () => {
+            toggleBtn.textContent = "▶️ Tocar Acorde";
+            toggleBtn.className = "btn btn-success";
+          });
+        }
+      }
+
+      // Função para gerar visualização do piano
+      async function generatePianoVisualization(cipher) {
+        try {
+          console.log("🎹 INICIANDO visualização do piano com cifra:", cipher);
+
+          // Verificar se a seção existe
+          const pianoSection = document.getElementById(
+            "piano-visualization-section"
+          );
+          if (!pianoSection) {
+            console.error(
+              "❌ Seção piano-visualization-section NÃO ENCONTRADA!"
+            );
+            return;
+          }
+          console.log("✅ Seção do piano encontrada");
+
+          // Obter dados JSON com as notas da partitura
+          console.log("📡 Fazendo requisição para /translate...");
+          const notesResponse = await fetch("/translate", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cipher: cipher,
+              format: "json",
+            }),
+          });
+
+          if (!notesResponse.ok) {
+            console.error("❌ Erro na requisição:", notesResponse.status);
+            return;
+          }
+          console.log("✅ Resposta da API recebida");
+
+          const data = await notesResponse.json();
+          console.log("📊 Dados recebidos:", data);
+
+          // Verificar se temos dados válidos (pode estar em chord_info ou translation)
+          const chordData = data.chord_info || data.translation;
+          if (!data.success || !chordData) {
+            console.error(
+              "❌ Dados inválidos ou chord_info/translation ausente"
+            );
+            console.log("🔍 Estrutura disponível:", Object.keys(data));
+            return;
+          }
+
+          console.log("✅ Dados do acorde encontrados:", chordData);
+
+          // Mostrar seção do piano
+          pianoSection.style.display = "block";
+          console.log("✅ Seção do piano tornada visível");
+
+          // Gerar visualização SIMPLES
+          console.log("🎨 Gerando visualização...");
+          generateSimplePianoView(chordData);
+
+          console.log("🎉 Visualização do piano CONCLUÍDA!");
+        } catch (error) {
+          console.error("💥 ERRO na visualização do piano:", error);
+        }
+      }
+
+      // Função SIMPLES para mostrar as notas
+      function generateSimplePianoView(chordInfo) {
+        console.log("🎵 INICIANDO generateSimplePianoView");
+        console.log("📊 Dados do acorde recebidos:", chordInfo);
+        console.log("🔍 Estrutura dos dados:", Object.keys(chordInfo || {}));
+        console.log("🔍 Propriedades disponíveis:", chordInfo);
+
+        const container = document.getElementById("piano-container");
+        if (!container) {
+          console.error("❌ Container piano-container NÃO ENCONTRADO!");
+          return;
+        }
+        console.log("✅ Container piano-container encontrado!");
+
+        // Limpar container
+        container.innerHTML = "";
+
+        // Título
+        const title = document.createElement("h4");
+        title.textContent = "🎹 Notas do Acorde no Piano";
+        title.style.textAlign = "center";
+        title.style.color = "#333";
+        title.style.marginBottom = "20px";
+        container.appendChild(title);
+
+        // Extrair notas
+        const rightHandNotes = chordInfo.right_hand || [];
+        const leftHandNotes = chordInfo.left_hand || [];
+
+        // Tabela simples
+        const table = document.createElement("table");
+        table.className = "notes-table";
+
+        let tableHTML = `
+          <thead>
+            <tr>
+              <th>Mão</th>
+              <th>Notas para Tocar</th>
+            </tr>
+          </thead>
+          <tbody>
+        `;
+
+        // Mão direita
+        if (rightHandNotes.length > 0) {
+          const noteNames = rightHandNotes
+            .map((note) => `${note.name}${note.octave}`)
+            .join(" - ");
+          tableHTML += `
+            <tr>
+              <td class="note-right-hand">Mão Direita (Treble)</td>
+              <td class="note-right-hand">${noteNames}</td>
+            </tr>
+          `;
+        }
+
+        // Mão esquerda
+        if (leftHandNotes.length > 0) {
+          const noteNames = leftHandNotes
+            .map((note) => `${note.name}${note.octave}`)
+            .join(" - ");
+          tableHTML += `
+            <tr>
+              <td class="note-left-hand">Mão Esquerda (Bass)</td>
+              <td class="note-left-hand">${noteNames}</td>
+            </tr>
+          `;
+        }
+
+        tableHTML += `</tbody>`;
+        table.innerHTML = tableHTML;
+        container.appendChild(table);
+
+        // Piano visual SVG simples
+        createVisualPiano(container, rightHandNotes, leftHandNotes);
+
+        // Legenda
+        const legendDiv = document.createElement("div");
+        legendDiv.className = "piano-legend";
+        legendDiv.innerHTML = `
+          <div class="legend-item">
+            <div class="legend-color right-hand"></div>
+            <span>Mão Direita</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-color left-hand"></div>
+            <span>Mão Esquerda</span>
+          </div>
+        `;
+        container.appendChild(legendDiv);
+
+        console.log("Piano simples gerado com sucesso!");
+      }
+
+      function createVisualPiano(container, rightHand, leftHand) {
+        console.log("🎹 Criando piano com múltiplas oitavas...");
+
+        // Converter notas para strings
+        const rightNotes = rightHand.map((n) => `${n.name}${n.octave}`);
+        const leftNotes = leftHand.map((n) => `${n.name}${n.octave}`);
+
+        console.log("🎵 Notas mão direita:", rightNotes);
+        console.log("🎵 Notas mão esquerda:", leftNotes);
+
+        // Função para verificar equivalência enarmônica
+        function areEnharmonic(note1, note2) {
+          const enharmonicMap = {
+            "C#": "Db",
+            Db: "C#",
+            "D#": "Eb",
+            Eb: "D#",
+            "F#": "Gb",
+            Gb: "F#",
+            "G#": "Ab",
+            Ab: "G#",
+            "A#": "Bb",
+            Bb: "A#",
+          };
+
+          // Extrair nome da nota sem oitava
+          const getName = (note) => note.replace(/\d+$/, "");
+          const getOctave = (note) => note.match(/\d+$/)?.[0];
+
+          const name1 = getName(note1);
+          const name2 = getName(note2);
+          const octave1 = getOctave(note1);
+          const octave2 = getOctave(note2);
+
+          // Mesma oitava e notas enarmônicas
+          return (
+            octave1 === octave2 &&
+            (name1 === name2 ||
+              enharmonicMap[name1] === name2 ||
+              enharmonicMap[name2] === name1)
+          );
+        }
+
+        // Função para verificar se uma nota está ativa
+        function isNoteActive(pianoKey, handNotes) {
+          return handNotes.some((handNote) =>
+            areEnharmonic(pianoKey, handNote)
+          );
+        }
+
+        // Piano de C2 até B6 (5 oitavas completas)
+        const octaves = [2, 3, 4, 5, 6]; // Oitavas 2, 3, 4, 5 e 6 (C2 até B6)
+        const whiteNotesPerOctave = ["C", "D", "E", "F", "G", "A", "B"];
+        const blackNotesPerOctave = ["C#", "D#", "F#", "G#", "A#"];
+
+        // Gerar todas as teclas brancas
+        let whiteKeys = [];
+        octaves.forEach((octave) => {
+          whiteNotesPerOctave.forEach((note) => {
+            whiteKeys.push(`${note}${octave}`);
+          });
+        });
+
+        // Definir dimensões das teclas ANTES de usar
+        const keyWidth = 28; // Teclas ainda menores para 5 oitavas
+        const whiteHeight = 120;
+        const blackHeight = 80;
+
+        // Gerar todas as teclas pretas com suas posições
+        let blackKeys = [];
+        let whiteKeyIndex = 0;
+        octaves.forEach((octave) => {
+          const basePosition = whiteKeyIndex * keyWidth; // Usar keyWidth variável
+
+          // Posições das teclas pretas dentro de cada oitava (ajustadas para keyWidth=28)
+          const blackPositions = [18, 46, 102, 130, 158]; // Posições relativas para teclas de 28px
+
+          blackNotesPerOctave.forEach((note, i) => {
+            blackKeys.push({
+              note: `${note}${octave}`,
+              pos: basePosition + blackPositions[i],
+            });
+          });
+
+          whiteKeyIndex += whiteNotesPerOctave.length; // 7 teclas brancas por oitava
+        });
+
+        const svgWidth = whiteKeys.length * keyWidth;
+
+        const pianoDiv = document.createElement("div");
+        pianoDiv.innerHTML = `
+          <svg width="${svgWidth}" height="${whiteHeight + 30}" 
+               style="border: 2px solid #333; border-radius: 8px; background: white; display: block; margin: 20px auto; overflow-x: auto;">
+            <!-- Teclas brancas -->
+            ${whiteKeys
+              .map((note, i) => {
+                let fill = "white";
+                let strokeColor = "#333";
+                if (isNoteActive(note, rightNotes)) {
+                  fill = "#2196f3";
+                  strokeColor = "#1976d2";
+                } else if (isNoteActive(note, leftNotes)) {
+                  fill = "#9c27b0";
+                  strokeColor = "#7b1fa2";
+                }
+
+                return `
+                <rect x="${i * keyWidth}" y="0" width="${
+                  keyWidth - 1
+                }" height="${whiteHeight}" 
+                      fill="${fill}" stroke="${strokeColor}" stroke-width="2"/>
+                <text x="${i * keyWidth + keyWidth / 2}" y="${whiteHeight - 8}" 
+                      text-anchor="middle" font-size="10" font-weight="bold" fill="#333">${note}</text>
+              `;
+              })
+              .join("")}
+            
+            <!-- Teclas pretas -->
+            ${blackKeys
+              .map((key) => {
+                let fill = "#333";
+                let strokeColor = "#000";
+                if (isNoteActive(key.note, rightNotes)) {
+                  fill = "#1976d2";
+                  strokeColor = "#0d47a1";
+                } else if (isNoteActive(key.note, leftNotes)) {
+                  fill = "#7b1fa2";
+                  strokeColor = "#4a148c";
+                }
+
+                return `
+                <rect x="${key.pos}" y="0" width="18" height="${blackHeight}"
+                      fill="${fill}" stroke="${strokeColor}" stroke-width="2"/>
+                <text x="${key.pos + 9}" y="${blackHeight - 8}" 
+                      text-anchor="middle" font-size="8" font-weight="bold" fill="white">${
+                        key.note
+                      }</text>
+              `;
+              })
+              .join("")}
+          </svg>
+        `;
+
+        container.appendChild(pianoDiv);
+        console.log("✅ Piano com múltiplas oitavas criado!");
+      }
+
+      // Função para recortar partitura e remover espaço em branco excessivo
+      function cropScoreToContent() {
+        const svg = document.querySelector("#osmd-container svg");
+        if (!svg) return;
+
+        try {
+          // Encontrar todos os elementos com conteúdo musical
+          const noteElements = svg.querySelectorAll(
+            'g[class*="vf-note"], g[class*="vf-stavenote"], g[class*="vf-clef"], text'
+          );
+
+          if (noteElements.length === 0) return;
+
+          let minX = Infinity,
+            maxX = -Infinity;
+          let minY = Infinity,
+            maxY = -Infinity;
+
+          // Calcular bounding box do conteúdo musical
+          noteElements.forEach((element) => {
+            const bbox = element.getBoundingClientRect();
+            const svgRect = svg.getBoundingClientRect();
+
+            // Converter coordenadas relativas ao SVG
+            const relativeX = bbox.left - svgRect.left;
+            const relativeY = bbox.top - svgRect.top;
+
+            minX = Math.min(minX, relativeX);
+            maxX = Math.max(maxX, relativeX + bbox.width);
+            minY = Math.min(minY, relativeY);
+            maxY = Math.max(maxY, relativeY + bbox.height);
+          });
+
+          // Adicionar margem
+          const margin = 20;
+          minX = Math.max(0, minX - margin);
+          minY = Math.max(0, minY - margin);
+          maxX = maxX + margin;
+          maxY = maxY + margin;
+
+          // Calcular dimensões do conteúdo
+          const contentWidth = maxX - minX;
+          const contentHeight = maxY - minY;
+
+          // Aplicar novo viewBox se as dimensões fazem sentido
+          if (
+            contentWidth > 50 &&
+            contentHeight > 50 &&
+            contentWidth < 1000 &&
+            contentHeight < 500
+          ) {
+            svg.setAttribute(
+              "viewBox",
+              `${minX} ${minY} ${contentWidth} ${contentHeight}`
+            );
+            svg.style.width = "100%";
+            svg.style.height = "auto";
+            svg.style.maxHeight = "300px";
+
+            console.log(
+              `Partitura recortada: ${contentWidth}x${contentHeight}px`
+            );
+          }
+        } catch (error) {
+          console.warn("Erro ao recortar partitura:", error);
+        }
+      }
+
+      // Funções auxiliares
+      function showLoading(show) {
+        document.getElementById("loading").style.display = show
+          ? "block"
+          : "none";
+      }
+
+      function showError(message) {
+        const resultSection = document.getElementById("result-section");
+        const resultContent = document.getElementById("result-content");
+
+        resultContent.innerHTML = `<div class="error">❌ ${message}</div>`;
+        resultSection.style.display = "block";
+      }
+
+      function showSuccess(message) {
+        const resultSection = document.getElementById("result-section");
+        const resultContent = document.getElementById("result-content");
+
+        resultContent.innerHTML = `<div class="success">✅ ${message}</div>`;
+        resultSection.style.display = "block";
+      }
+
+      // Event listener para Enter no input
+      document
+        .getElementById("cipher-input")
+        .addEventListener("keypress", function (e) {
+          if (e.key === "Enter") {
+            translateCipher();
+          }
+        });
+    </script>
+  </body>
+</html>

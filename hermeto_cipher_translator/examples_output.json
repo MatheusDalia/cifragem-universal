@@ -1,0 +1,296 @@
+[
+  {
+    "cipher": "D7+",
+    "info": {
+      "original": "D7+",
+      "type": "maior",
+      "left_hand": [],
+      "right_hand": [
+        "C4",
+        "E4",
+        "G4"
+      ],
+      "intervals": [
+        "Interval(degree=1, quality='J', semitones=0, name='uníssono')",
+        "Interval(degree=3, quality='M', semitones=4, name='3ª maior')",
+        "Interval(degree=5, quality='J', semitones=7, name='5ª justa')"
+      ],
+      "total_notes": 3
+    },
+    "validation": {
+      "valid": true,
+      "found": "exact",
+      "example": {
+        "cipher": "D7+",
+        "type": "maior",
+        "description": "Acorde maior expandido",
+        "structure": "1-3M-5J-7M-9M-13M",
+        "notes": [
+          "D",
+          "F#",
+          "A",
+          "C#",
+          "E",
+          "B"
+        ],
+        "distribution": {
+          "right_hand": [
+            "D",
+            "F#",
+            "A",
+            "C#",
+            "E",
+            "B"
+          ],
+          "left_hand": []
+        }
+      },
+      "confidence": 1.0
+    }
+  },
+  {
+    "cipher": "C-479",
+    "info": {
+      "original": "C-479",
+      "type": "menor",
+      "left_hand": [],
+      "right_hand": [
+        "A#6"
+      ],
+      "intervals": [
+        "Interval(degree=479, quality='J', semitones=22, name='479ª J')"
+      ],
+      "total_notes": 1
+    },
+    "validation": {
+      "valid": true,
+      "found": "exact",
+      "example": {
+        "cipher": "C-479",
+        "type": "menor",
+        "description": "Acorde menor com distribuição específica",
+        "structure": "1-4J-7m (esquerda) + 9M-3m-5J (direita)",
+        "notes": [
+          "C",
+          "F",
+          "Bb",
+          "D",
+          "Eb",
+          "G"
+        ],
+        "distribution": {
+          "right_hand": [
+            "D",
+            "Eb",
+            "G"
+          ],
+          "left_hand": [
+            "C",
+            "F",
+            "Bb"
+          ]
+        }
+      },
+      "confidence": 1.0
+    }
+  },
+  {
+    "cipher": "A/F6",
+    "info": {
+      "original": "A/F6",
+      "type": "sobreposto",
+      "left_hand": [
+        "A3"
+      ],
+      "right_hand": [
+        "C4",
+        "E4",
+        "G4"
+      ],
+      "intervals": [
+        "Interval(degree=1, quality='J', semitones=0, name='uníssono')",
+        "Interval(degree=3, quality='M', semitones=4, name='3ª maior')",
+        "Interval(degree=5, quality='J', semitones=7, name='5ª justa')",
+        "Interval(degree=6, quality='M', semitones=9, name='6ª maior')"
+      ],
+      "total_notes": 4
+    },
+    "validation": {
+      "valid": true,
+      "found": "exact",
+      "example": {
+        "cipher": "A/F6",
+        "type": "sobreposto",
+        "description": "Tríade A sobre baixo F6",
+        "structure": "A maior (direita) + F-D (esquerda)",
+        "notes": [
+          "A",
+          "C#",
+          "E",
+          "F",
+          "D"
+        ],
+        "distribution": {
+          "right_hand": [
+            "A",
+            "C#",
+            "E"
+          ],
+          "left_hand": [
+            "F",
+            "D"
+          ]
+        }
+      },
+      "confidence": 1.0
+    }
+  },
+  {
+    "cipher": "Em7/Ab6",
+    "info": {
+      "original": "Em7/Ab6",
+      "type": "sobreposto",
+      "left_hand": [
+        "A3"
+      ],
+      "right_hand": [
+        "C4",
+        "D#4",
+        "G4",
+        "A#4"
+      ],
+      "intervals": [
+        "Interval(degree=1, quality='J', semitones=0, name='uníssono')",
+        "Interval(degree=3, quality='m', semitones=3, name='3ª menor')",
+        "Interval(degree=5, quality='J', semitones=7, name='5ª justa')",
+        "Interval(degree=7, quality='m', semitones=10, name='7ª menor')",
+        "Interval(degree=6, quality='M', semitones=9, name='6ª maior')"
+      ],
+      "total_notes": 5
+    },
+    "validation": {
+      "valid": true,
+      "found": "exact",
+      "example": {
+        "cipher": "Em7/Ab6",
+        "type": "sobreposto",
+        "description": "Tetrade Em7 sobre Ab6",
+        "structure": "Em7 (direita) + Ab-F (esquerda)",
+        "notes": [
+          "E",
+          "G",
+          "B",
+          "D",
+          "Ab",
+          "F"
+        ],
+        "distribution": {
+          "right_hand": [
+            "E",
+            "G",
+            "B",
+            "D"
+          ],
+          "left_hand": [
+            "Ab",
+            "F"
+          ]
+        }
+      },
+      "confidence": 1.0
+    }
+  },
+  {
+    "cipher": "F 4 7 9",
+    "info": {
+      "original": "F 4 7 9",
+      "type": "suspenso",
+      "left_hand": [],
+      "right_hand": [
+        "F4",
+        "A#4",
+        "D6"
+      ],
+      "intervals": [
+        "Interval(degree=4, quality='J', semitones=5, name='4ª justa')",
+        "Interval(degree=7, quality='m', semitones=10, name='7ª menor')",
+        "Interval(degree=9, quality='M', semitones=14, name='9ª maior')"
+      ],
+      "total_notes": 3
+    },
+    "validation": {
+      "valid": true,
+      "found": "exact",
+      "example": {
+        "cipher": "F 4 7 9",
+        "type": "suspenso",
+        "description": "Acorde suspenso",
+        "structure": "1-4J-5J-7m-9M",
+        "notes": [
+          "F",
+          "Bb",
+          "C",
+          "Eb",
+          "G"
+        ],
+        "distribution": {
+          "right_hand": [
+            "F",
+            "Bb",
+            "C",
+            "Eb",
+            "G"
+          ],
+          "left_hand": []
+        }
+      },
+      "confidence": 1.0
+    }
+  },
+  {
+    "cipher": "G#-5-",
+    "info": {
+      "original": "G#-5-",
+      "type": "meio-diminuto",
+      "left_hand": [],
+      "right_hand": [
+        "F#4"
+      ],
+      "intervals": [
+        "Interval(degree=5, quality='d', semitones=6, name='5ª diminuta')"
+      ],
+      "total_notes": 1
+    },
+    "validation": {
+      "valid": true,
+      "found": "exact",
+      "example": {
+        "cipher": "G#-5-",
+        "type": "meio-diminuto",
+        "description": "Meio-diminuto expandido",
+        "structure": "1-3m-5d-7m-9M-11J",
+        "notes": [
+          "G#",
+          "B",
+          "D",
+          "F#",
+          "A#",
+          "C#"
+        ],
+        "distribution": {
+          "right_hand": [
+            "G#",
+            "B",
+            "D",
+            "F#"
+          ],
+          "left_hand": [
+            "A#",
+            "C#"
+          ]
+        }
+      },
+      "confidence": 1.0
+    }
+  }
+]

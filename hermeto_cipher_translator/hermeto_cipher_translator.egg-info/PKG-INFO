@@ -1,0 +1,96 @@
+Metadata-Version: 2.4
+Name: hermeto-cipher-translator
+Version: 0.1.0
+Summary: Tradutor de Cifras Herméticas para Partitura de Piano
+Author-email: Matheus Dalia <matheusdalia@example.com>
+Project-URL: Homepage, https://github.com/matheusdalia/hermeto-cipher-translator
+Project-URL: Bug Reports, https://github.com/matheusdalia/hermeto-cipher-translator/issues
+Classifier: Development Status :: 3 - Alpha
+Classifier: Intended Audience :: Musicians
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Programming Language :: Python :: 3
+Classifier: Programming Language :: Python :: 3.8
+Classifier: Programming Language :: Python :: 3.9
+Classifier: Programming Language :: Python :: 3.10
+Classifier: Programming Language :: Python :: 3.11
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: music21>=9.0.0
+Requires-Dist: matplotlib>=3.5.0
+Requires-Dist: flask>=2.0.0
+Requires-Dist: pandas>=1.3.0
+Requires-Dist: pytest>=7.0.0
+Provides-Extra: dev
+Requires-Dist: pytest-cov; extra == "dev"
+Requires-Dist: black; extra == "dev"
+Requires-Dist: flake8; extra == "dev"
+Requires-Dist: mypy; extra == "dev"
+
+# Tradutor de Cifras Herméticas do Hermeto Pascoal
+
+🎼 Ferramenta computacional para traduzir o sistema único de cifragem do Hermeto Pascoal em partituras de piano (claves de Sol e Fá).
+
+## 🎯 Objetivo
+
+Hermeto Pascoal desenvolveu um sistema próprio de cifragem musical que não possui documentação formal ou dicionário de acordes. Esta ferramenta automatiza a conversão dessas cifras "herméticas" para partitura tradicional de piano.
+
+## 🏗️ Arquitetura
+
+### Módulos Principais:
+
+- **`chord_parser.py`** - Analisa e interpreta cifras herméticas (ex: "C458/A5+7")
+- **`interval_converter.py`** - Converte símbolos (4, 5+, 7-, 9+) para intervalos musicais
+- **`note_generator.py`** - Transforma intervalos em notas absolutas (C, F#, Bb)
+- **`staff_distributor.py`** - Distribui notas entre claves Sol (direita) e Fá (esquerda)
+- **`score_generator.py`** - Gera partituras visuais usando music21
+- **`chord_dictionary.py`** - Base de dados de acordes herméticos
+
+### Sistema de Cifras Herméticas:
+
+1. **Acordes Maiores**: `D7+` → 1-3M-5J-7M-9M-13M
+2. **Acordes Menores**: `C-479` → Distribuição específica entre mãos
+3. **Dominantes**: `F#79+13-` → Alterações em 9ª, 11ª, 13ª
+4. **Suspensos**: `F 4 7 9` → Estrutura 1-4J-7m-9M
+5. **Meio-diminutos**: `G#-5-` → Com 9M e 11J adicionais
+6. **Sobrepostos**: `A/F6` → Mão direita / Mão esquerda
+
+## 🚀 Instalação
+
+```bash
+cd hermeto_cipher_translator
+pip install -e .
+```
+
+## 📖 Uso
+
+```python
+from hermeto_cipher_translator import HermetoTranslator
+
+translator = HermetoTranslator()
+
+# Traduzir cifra para partitura
+score = translator.translate("C458/A5+7")
+score.show()  # Exibe partitura
+score.save("minha_cifra.png")  # Salva como imagem
+```
+
+## 🎹 Exemplos
+
+- `D7+` → Acorde maior expandido com 7M, 9M, 13M
+- `C-479` → Acorde menor distribuído entre as mãos
+- `Em7/Ab6` → Tetrade Em7 (direita) + sexta Ab (esquerda)
+- `F#79+13-` → Dominante com 9+ e 13-
+
+## 🧪 Testes
+
+```bash
+pytest tests/
+```
+
+## 📚 Referências
+
+Baseado no sistema de cifragem universal desenvolvido por Hermeto Pascoal, documentado através de análise de vídeos educacionais e materiais de músicos que colaboraram com o mestre.
+
+## 📄 Licença
+
+MIT License - Veja [LICENSE](LICENSE) para detalhes.

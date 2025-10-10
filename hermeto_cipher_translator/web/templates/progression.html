@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Progressões Hermético - Sistema de Cifras</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
+
+    <!-- Custom CSS -->
+    <style>
+      body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        min-height: 100vh;
+      }
+
+      .container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 15px;
+        padding: 30px;
+        margin-top: 30px;
+        margin-bottom: 30px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        color: #2c3e50;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .header p {
+        color: #7f8c8d;
+        font-size: 1.1em;
+      }
+
+      .input-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 25px;
+        margin-bottom: 30px;
+      }
+
+      .progression-input {
+        font-size: 1.2em;
+        padding: 15px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-family: "Courier New", monospace;
+      }
+
+      .progression-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+      }
+
+      .settings-panel {
+        background: #ffffff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .btn-primary {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .result-section {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 25px;
+        margin-top: 30px;
+        border: 1px solid #e9ecef;
+      }
+
+      .chord-card {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        transition: all 0.3s ease;
+      }
+
+      .chord-card:hover {
+        background: #e9ecef;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      }
+
+      .chord-symbol {
+        font-family: "Courier New", monospace;
+        font-size: 1.3em;
+        font-weight: bold;
+        color: #2980b9;
+      }
+
+      .notes-display {
+        font-family: "Courier New", monospace;
+        background: #ffffff;
+        padding: 8px 12px;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+        margin: 5px 0;
+      }
+
+      .right-hand {
+        border-left: 4px solid #27ae60;
+      }
+      .left-hand {
+        border-left: 4px solid #e74c3c;
+      }
+
+      .analysis-panel {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 20px 0;
+      }
+
+      .stat-item {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        padding: 15px;
+        margin: 10px 0;
+        text-align: center;
+      }
+
+      .export-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin: 20px 0;
+      }
+
+      .btn-export {
+        background: #28a745;
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 20px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+      }
+
+      .btn-export:hover {
+        background: #218838;
+        transform: translateY(-1px);
+        color: white;
+      }
+
+      .examples-panel {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 15px;
+        margin: 15px 0;
+      }
+
+      .loading {
+        display: none;
+        text-align: center;
+        padding: 20px;
+      }
+
+      .spinner-border {
+        color: #667eea;
+      }
+
+      .alert {
+        border-radius: 8px;
+        border: none;
+      }
+
+      @media (max-width: 768px) {
+        .container {
+          margin: 10px;
+          padding: 20px;
+        }
+
+        .export-buttons {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1><i class="fas fa-music"></i> Progressões Herméticas</h1>
+        <p>
+          Sistema de processamento de progressões harmônicas do Hermeto Pascoal
+        </p>
+        <div class="mt-3">
+          <a href="/" class="btn btn-outline-secondary btn-sm me-2">
+            <i class="fas fa-arrow-left"></i> Voltar para Acordes
+          </a>
+        </div>
+      </div>
+
+      <!-- Input Section -->
+      <div class="input-section">
+        <h3><i class="fas fa-keyboard"></i> Entrada da Progressão</h3>
+
+        <div class="mb-3">
+          <label for="progressionInput" class="form-label"
+            >Progressão Harmônica:</label
+          >
+          <input
+            type="text"
+            class="form-control progression-input"
+            id="progressionInput"
+            placeholder="Ex: A-479 | C7+ | F#79+13- | D7+9+11+"
+            value="{{ initial_progression or '' }}"
+          />
+        </div>
+
+        <!-- Settings Panel -->
+        <div class="settings-panel">
+          <h5><i class="fas fa-cog"></i> Configurações</h5>
+          <div class="row">
+            <div class="col-md-3">
+              <label for="tempo" class="form-label">Tempo (BPM):</label>
+              <input
+                type="number"
+                class="form-control"
+                id="tempo"
+                value="120"
+                min="60"
+                max="200"
+              />
+            </div>
+            <div class="col-md-3">
+              <label for="timeSignature" class="form-label"
+                >Fórmula de Compasso:</label
+              >
+              <select class="form-control" id="timeSignature">
+                <option value="4/4">4/4</option>
+                <option value="3/4">3/4</option>
+                <option value="2/4">2/4</option>
+                <option value="6/8">6/8</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="keySignature" class="form-label">Tonalidade:</label>
+              <select class="form-control" id="keySignature">
+                <option value="C">C (Dó Maior)</option>
+                <option value="G">G (Sol Maior)</option>
+                <option value="D">D (Ré Maior)</option>
+                <option value="A">A (Lá Maior)</option>
+                <option value="E">E (Mi Maior)</option>
+                <option value="F">F (Fá Maior)</option>
+                <option value="Bb">Bb (Si♭ Maior)</option>
+                <option value="Am">Am (Lá menor)</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <label for="title" class="form-label">Título:</label>
+              <input
+                type="text"
+                class="form-control"
+                id="title"
+                value="Progressão Hermética"
+              />
+            </div>
+          </div>
+          <div class="row mt-3">
+            <div class="col-md-6">
+              <div class="form-check">
+                <input
+                  class="form-check-input"
+                  type="checkbox"
+                  id="showChordSymbols"
+                  checked
+                />
+                <label class="form-check-label" for="showChordSymbols">
+                  <i class="fas fa-music"></i> Mostrar cifras na partitura
+                  (apenas texto, sem som)
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-center">
+          <button class="btn btn-primary btn-lg" id="processBtn">
+            <i class="fas fa-play"></i> Processar Progressão
+          </button>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div class="loading" id="loading">
+        <div class="spinner-border" role="status">
+          <span class="visually-hidden">Carregando...</span>
+        </div>
+        <p class="mt-2">Processando progressão...</p>
+      </div>
+
+      <!-- Results Section -->
+      <div class="result-section" id="resultSection" style="display: none">
+        <h3><i class="fas fa-chart-line"></i> Resultado da Análise</h3>
+
+        <!-- Analysis Panel -->
+        <div class="analysis-panel" id="analysisPanel">
+          <h4><i class="fas fa-analytics"></i> Análise da Progressão</h4>
+          <div class="row" id="statsContainer">
+            <!-- Stats will be populated here -->
+          </div>
+        </div>
+
+        <!-- Export Buttons -->
+        <div class="export-buttons">
+          <button class="btn btn-export" id="exportXML">
+            <i class="fas fa-file-code"></i> Exportar MusicXML
+          </button>
+          <button class="btn btn-export" id="exportMIDI">
+            <i class="fas fa-file-audio"></i> Exportar MIDI
+          </button>
+        </div>
+
+        <!-- Chords Display -->
+        <div id="chordsContainer">
+          <h4><i class="fas fa-list"></i> Acordes da Progressão</h4>
+          <div id="chordsList">
+            <!-- Chords will be populated here -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Error/Success Messages -->
+      <div id="messages"></div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // Global variables
+      let currentProgressionData = null;
+
+      // DOM Elements
+      const progressionInput = document.getElementById("progressionInput");
+      const processBtn = document.getElementById("processBtn");
+      const loading = document.getElementById("loading");
+      const resultSection = document.getElementById("resultSection");
+      const messagesDiv = document.getElementById("messages");
+      const exportXMLBtn = document.getElementById("exportXML");
+      const exportMIDIBtn = document.getElementById("exportMIDI");
+
+      // Event Listeners
+      processBtn.addEventListener("click", processProgression);
+      exportXMLBtn.addEventListener("click", () => exportProgression("xml"));
+      exportMIDIBtn.addEventListener("click", () => exportProgression("midi"));
+
+      // Process progression function
+      async function processProgression() {
+        const progression = progressionInput.value.trim();
+
+        if (!progression) {
+          showMessage("Por favor, digite uma progressão harmônica.", "warning");
+          return;
+        }
+
+        // Show loading
+        loading.style.display = "block";
+        resultSection.style.display = "none";
+        processBtn.disabled = true;
+
+        try {
+          const response = await fetch("/progression", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              progression: progression,
+              tempo: parseInt(document.getElementById("tempo").value),
+              time_signature: document.getElementById("timeSignature").value,
+              key_signature: document.getElementById("keySignature").value,
+              title: document.getElementById("title").value,
+              show_chord_symbols:
+                document.getElementById("showChordSymbols").checked,
+            }),
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            currentProgressionData = data;
+            displayResults(data);
+            showMessage("Progressão processada com sucesso!", "success");
+          } else {
+            showMessage(data.error || "Erro ao processar progressão", "danger");
+          }
+        } catch (error) {
+          console.error("Erro:", error);
+          showMessage("Erro de conexão: " + error.message, "danger");
+        } finally {
+          loading.style.display = "none";
+          processBtn.disabled = false;
+        }
+      }
+
+      // Display results function
+      function displayResults(data) {
+        // Show analysis
+        displayAnalysis(data.analysis);
+
+        // Show chords
+        displayChords(data.chords);
+
+        // Show result section
+        resultSection.style.display = "block";
+      }
+
+      // Display analysis
+      function displayAnalysis(analysis) {
+        const statsContainer = document.getElementById("statsContainer");
+        statsContainer.innerHTML = `
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h5>${analysis.total_acordes}</h5>
+                        <p>Total de Acordes</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h5>${analysis.duracao_total_beats}</h5>
+                        <p>Duração (beats)</p>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-item">
+                        <h5>${Object.keys(analysis.tipos_acordes).length}</h5>
+                        <p>Tipos Diferentes</p>
+                    </div>
+                </div>
+            `;
+      }
+
+      // Display chords
+      function displayChords(chords) {
+        const chordsList = document.getElementById("chordsList");
+        chordsList.innerHTML = "";
+
+        chords.forEach((chord, index) => {
+          const chordCard = document.createElement("div");
+          chordCard.className = "chord-card";
+
+          const rightHandNotes = chord.right_hand_notes
+            .map((note) => `${note.name}${note.octave}`)
+            .join(" ");
+          const leftHandNotes = chord.left_hand_notes
+            .map((note) => `${note.name}${note.octave}`)
+            .join(" ");
+
+          chordCard.innerHTML = `
+                    <div class="row align-items-center">
+                        <div class="col-md-2">
+                            <div class="chord-symbol">${
+                              chord.original_cipher
+                            }</div>
+                            <small class="text-muted">${
+                              chord.chord_type
+                            }</small>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="notes-display right-hand">
+                                <strong>Mão Direita:</strong> ${
+                                  rightHandNotes || "Vazio"
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="notes-display left-hand">
+                                <strong>Mão Esquerda:</strong> ${
+                                  leftHandNotes || "Vazio"
+                                }
+                            </div>
+                        </div>
+                        <div class="col-md-2 text-center">
+                            <small class="text-muted">
+                                Compasso ${chord.bar}<br>
+                                ${chord.duration} beats
+                            </small>
+                        </div>
+                    </div>
+                `;
+
+          chordsList.appendChild(chordCard);
+        });
+      }
+
+      // Export progression
+      async function exportProgression(format) {
+        if (!currentProgressionData) {
+          showMessage(
+            "Nenhuma progressão processada para exportar.",
+            "warning"
+          );
+          return;
+        }
+
+        try {
+          const response = await fetch("/progression/export", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              progression: currentProgressionData.progression,
+              format: format,
+              tempo: currentProgressionData.settings.tempo,
+              time_signature: currentProgressionData.settings.time_signature,
+              key_signature: currentProgressionData.settings.key_signature,
+              title: currentProgressionData.settings.title,
+              show_chord_symbols:
+                document.getElementById("showChordSymbols").checked,
+            }),
+          });
+
+          if (response.ok) {
+            // Trigger download
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${currentProgressionData.settings.title.replace(
+              /\s+/g,
+              "_"
+            )}.${format}`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+
+            showMessage(
+              `Arquivo ${format.toUpperCase()} baixado com sucesso!`,
+              "success"
+            );
+          } else {
+            const errorData = await response.json();
+            showMessage(
+              errorData.error || "Erro ao exportar arquivo",
+              "danger"
+            );
+          }
+        } catch (error) {
+          console.error("Erro no export:", error);
+          showMessage("Erro ao exportar: " + error.message, "danger");
+        }
+      }
+
+      // Show message function
+      function showMessage(message, type) {
+        messagesDiv.innerHTML = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+          const alert = messagesDiv.querySelector(".alert");
+          if (alert) {
+            alert.remove();
+          }
+        }, 5000);
+      }
+
+      // Keyboard shortcuts
+      document.addEventListener("keydown", function (e) {
+        if (e.ctrlKey && e.key === "Enter") {
+          e.preventDefault();
+          processProgression();
+        }
+      });
+
+      // Auto-resize textarea based on content
+      progressionInput.addEventListener("input", function () {
+        this.style.height = "auto";
+        this.style.height = this.scrollHeight + "px";
+      });
+
+      // Check for URL parameters on page load
+      document.addEventListener("DOMContentLoaded", function () {
+        const urlParams = new URLSearchParams(window.location.search);
+        const progressionParam = urlParams.get("progression");
+
+        if (progressionParam) {
+          // Decode and set the progression
+          const decodedProgression = decodeURIComponent(progressionParam);
+          progressionInput.value = decodedProgression;
+
+          // Auto-resize textarea
+          progressionInput.style.height = "auto";
+          progressionInput.style.height = progressionInput.scrollHeight + "px";
+
+          // Show message
+          showMessage(
+            `Progressão importada do OCR: ${decodedProgression}`,
+            "info"
+          );
+
+          // Optionally auto-process
+          setTimeout(() => {
+            processProgression();
+          }, 1000);
+        }
+      });
+    </script>
+  </body>
+</html>

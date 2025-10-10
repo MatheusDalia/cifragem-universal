@@ -1,0 +1,200 @@
+{
+  "maior": {
+    "D7+": {
+      "description": "Acorde maior expandido",
+      "structure": "1-3M-5J-7M-9M-13M",
+      "notes": [
+        "D",
+        "F#",
+        "A",
+        "C#",
+        "E",
+        "B"
+      ],
+      "distribution": {
+        "right_hand": [
+          "D",
+          "F#",
+          "A",
+          "C#",
+          "E",
+          "B"
+        ],
+        "left_hand": []
+      }
+    }
+  },
+  "menor": {
+    "C-479": {
+      "description": "Acorde menor com distribuição específica",
+      "structure": "1-4J-7m (esquerda) + 9M-3m-5J (direita)",
+      "notes": [
+        "C",
+        "F",
+        "Bb",
+        "D",
+        "Eb",
+        "G"
+      ],
+      "distribution": {
+        "right_hand": [
+          "D",
+          "Eb",
+          "G"
+        ],
+        "left_hand": [
+          "C",
+          "F",
+          "Bb"
+        ]
+      }
+    }
+  },
+  "dominante": {
+    "F#79+13-": {
+      "description": "Dominante com 9+ e 13-",
+      "structure": "1-3M-5J-7m-9A-13m",
+      "notes": [
+        "F#",
+        "A#",
+        "C#",
+        "E",
+        "G##",
+        "D"
+      ],
+      "distribution": {
+        "right_hand": [
+          "F#",
+          "A#",
+          "C#",
+          "E",
+          "G##",
+          "D"
+        ],
+        "left_hand": []
+      }
+    }
+  },
+  "suspenso": {
+    "F 4 7 9": {
+      "description": "Acorde suspenso",
+      "structure": "1-4J-5J-7m-9M",
+      "notes": [
+        "F",
+        "Bb",
+        "C",
+        "Eb",
+        "G"
+      ],
+      "distribution": {
+        "right_hand": [
+          "F",
+          "Bb",
+          "C",
+          "Eb",
+          "G"
+        ],
+        "left_hand": []
+      }
+    }
+  },
+  "meio-diminuto": {
+    "G#-5-": {
+      "description": "Meio-diminuto expandido",
+      "structure": "1-3m-5d-7m-9M-11J",
+      "notes": [
+        "G#",
+        "B",
+        "D",
+        "F#",
+        "A#",
+        "C#"
+      ],
+      "distribution": {
+        "right_hand": [
+          "G#",
+          "B",
+          "D",
+          "F#"
+        ],
+        "left_hand": [
+          "A#",
+          "C#"
+        ]
+      }
+    }
+  },
+  "sobreposto": {
+    "A/F6": {
+      "description": "Tríade A sobre baixo F6",
+      "structure": "A maior (direita) + F-D (esquerda)",
+      "notes": [
+        "A",
+        "C#",
+        "E",
+        "F",
+        "D"
+      ],
+      "distribution": {
+        "right_hand": [
+          "A",
+          "C#",
+          "E"
+        ],
+        "left_hand": [
+          "F",
+          "D"
+        ]
+      }
+    },
+    "Em7/Ab6": {
+      "description": "Tetrade Em7 sobre Ab6",
+      "structure": "Em7 (direita) + Ab-F (esquerda)",
+      "notes": [
+        "E",
+        "G",
+        "B",
+        "D",
+        "Ab",
+        "F"
+      ],
+      "distribution": {
+        "right_hand": [
+          "E",
+          "G",
+          "B",
+          "D"
+        ],
+        "left_hand": [
+          "Ab",
+          "F"
+        ]
+      }
+    },
+    "C458/A5+7": {
+      "description": "C com intervalos sobre A alterado",
+      "structure": "C-F-G-C (direita) + A-F-G (esquerda)",
+      "notes": [
+        "C",
+        "F",
+        "G",
+        "A"
+      ],
+      "distribution": {
+        "right_hand": [
+          "C",
+          "F",
+          "G",
+          "C"
+        ],
+        "left_hand": [
+          "A",
+          "F",
+          "G"
+        ]
+      }
+    }
+  },
+  "tetrade": {
+  }
+}
