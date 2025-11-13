@@ -604,10 +604,7 @@
     <div class="container">
       <header class="header">
         <h1>🎼 Tradutor de Cifras Herméticas</h1>
-        <p>
-          Sistema de tradução das cifras únicas do Hermeto Pascoal para
-          partitura de piano
-        </p>
+        <p>Sistema de tradução das cifras universais de Hermeto Pascoal.</p>
         <div style="margin-top: 20px">
           <a
             href="/progression"
@@ -1691,6 +1688,10 @@
         container.appendChild(table);
 
         // Piano visual SVG simples
+        // Passa o root do acorde para o container via dataset
+        if (chordInfo.root) {
+          container.dataset.chordRoot = chordInfo.root;
+        }
         createVisualPiano(container, rightHandNotes, leftHandNotes);
 
         // Legenda
@@ -1766,19 +1767,32 @@
         const whiteNotesPerOctave = ["C", "D", "E", "F", "G", "A", "B"];
         // Detectar se o acorde tem root bemol
         let isFlatChord = false;
-        // Tenta obter o root do acorde a partir do container dataset (ou global)
+        // Detecta o root do acorde diretamente do dataset ou do objeto global
         let chordRoot = null;
         if (container && container.dataset && container.dataset.chordRoot) {
           chordRoot = container.dataset.chordRoot;
         } else if (window.chordRoot) {
           chordRoot = window.chordRoot;
-        } else {
-          // Fallback: tenta pegar a primeira nota da mão direita
-          if (rightHand.length > 0) {
-            chordRoot = rightHand[0].name;
-          }
         }
-        if (chordRoot && /[A-G]b/.test(chordRoot)) {
+        // Se não encontrou, tenta pegar do objeto chordInfo se disponível
+        if (!chordRoot && window.chordInfo && window.chordInfo.root) {
+          chordRoot = window.chordInfo.root;
+        }
+        // Se não encontrou, tenta pegar da mão direita
+        if (!chordRoot && rightHand.length > 0) {
+          chordRoot = rightHand[0].name;
+        }
+        // Força bemol se root contém '[A-G]b' (ignorando oitava)
+        const flatRootRegex = /([A-G]b)/;
+        if (chordRoot && flatRootRegex.test(chordRoot)) {
+          isFlatChord = true;
+        }
+        // Correção extra: se window.chordInfo existir e root contém '[A-G]b', força bemol
+        if (
+          window.chordInfo &&
+          window.chordInfo.root &&
+          flatRootRegex.test(window.chordInfo.root)
+        ) {
           isFlatChord = true;
         }
         // Se for acorde bemol, usa nomes bemóis para as teclas pretas

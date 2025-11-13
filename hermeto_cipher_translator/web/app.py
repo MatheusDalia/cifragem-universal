@@ -13,13 +13,11 @@ import json
 # Import dos módulos do tradutor
 try:
     from ..core.hermeto_translator import HermetoTranslator
-    from ..core.chord_dictionary import ChordDictionary
 except ImportError:
     # Fallback para desenvolvimento
     import sys
     sys.path.append(str(Path(__file__).parent.parent))
     from core.hermeto_translator import HermetoTranslator
-    from core.chord_dictionary import ChordDictionary
 
 
 def create_html_score_visualization(chord_info):
@@ -240,7 +238,6 @@ def create_app():
 
     # Inicializar tradutor e dicionário
     translator = HermetoTranslator()
-    chord_dict = ChordDictionary()
 
     @app.route('/')
     def index():
@@ -492,23 +489,6 @@ def create_app():
         except Exception as e:
             return jsonify({'error': f'Erro na geração da partitura: {str(e)}'}), 500
 
-    @app.route('/examples')
-    def get_examples():
-        """
-        Endpoint para obter exemplos de cifras por tipo
-        """
-        chord_type = request.args.get('type', '')
-
-        if chord_type:
-            examples = chord_dict.get_examples_by_type(chord_type)
-        else:
-            examples = chord_dict.get_all_examples()
-
-        return jsonify({
-            'examples': examples,
-            'statistics': chord_dict.get_statistics()
-        })
-
     @app.route('/batch_translate', methods=['POST'])
     def batch_translate():
         """
@@ -710,7 +690,6 @@ def create_app():
             'endpoints': {
                 'POST /translate': 'Traduz cifra hermética',
                 'POST /validate': 'Valida cifra hermética',
-                'GET /examples': 'Obtém exemplos de cifras',
                 'POST /batch_translate': 'Traduz múltiplas cifras',
                 'GET /progression': 'Interface para progressões',
                 'POST /progression': 'Processa progressão harmônica',
@@ -718,7 +697,6 @@ def create_app():
                 'GET /api/info': 'Informações da API'
             },
             'supported_formats': ['json', 'png', 'midi', 'xml'],
-            'chord_types': list(chord_dict.get_all_examples().keys())
         })
 
     # OCR Endpoints
