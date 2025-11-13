@@ -27,6 +27,7 @@ class HermetoProgressionProcessor:
     """
 
     def __init__(self):
+        print("[progression_processor] Inicializando HermetoProgressionProcessor...")
         self.translator = HermetoTranslator()
         self.default_time_signature = "4/4"
         self.default_tempo = 120
@@ -43,16 +44,16 @@ class HermetoProgressionProcessor:
         - "12/8" -> 12.0 beats
         - "5/4" -> 5.0 beats
         """
+        print(
+            f"[progression_processor] Calculando beats por compasso para {time_signature}")
         try:
             numerator, denominator = time_signature.split('/')
             numerator = int(numerator)
             denominator = int(denominator)
-
-            # Para simplicidade, tratamos o numerador como número de beats
-            # Em casos mais complexos como 6/8, seria preciso lógica adicional
             return float(numerator)
-        except:
-            # Fallback para 4/4 se não conseguir parsear
+        except Exception as e:
+            print(
+                f"[progression_processor] Erro ao parsear time_signature: {e}, usando 4/4")
             return 4.0
 
     def parse_progression_string(self, progression_str: str, time_signature: str = "4/4") -> List[Dict]:
@@ -78,28 +79,25 @@ class HermetoProgressionProcessor:
         """
 
         # Limpar string
+        print(
+            f"[progression_processor] Parseando string de progressão: '{progression_str}' com time_signature={time_signature}")
         progression_str = progression_str.strip()
         beats_per_measure = self._get_beats_per_measure(time_signature)
 
-        # Detectar separadores
         if '|' in progression_str:
-            # Formato com | - cada parte pode ter múltiplos acordes
             measure_parts = [part.strip()
                              for part in progression_str.split('|')]
             chord_parts = []
             for measure in measure_parts:
                 if ' ' in measure:
-                    # Múltiplos acordes neste compasso
                     measure_chords = measure.split()
-                    chord_parts.extend(
-                        self._distribute_chords_in_measure(measure_chords, beats_per_measure))
+                    chord_parts.extend(self._distribute_chords_in_measure(
+                        measure_chords, beats_per_measure))
                 else:
                     chord_parts.append(measure)
         elif '/' in progression_str:
-            # Formato com / (separação por compasso)
             chord_parts = [part.strip() for part in progression_str.split('/')]
         else:
-            # Formato com espaços - precisa determinar se são múltiplos por compasso
             space_parts = progression_str.split()
             chord_parts = self._distribute_chords_in_measure(
                 space_parts, beats_per_measure)
@@ -113,16 +111,17 @@ class HermetoProgressionProcessor:
             if not chord_part:
                 continue
 
-            # Extrair duração se especificada: "Am7(2)"
             duration_match = re.search(r'\((\d+(?:\.\d+)?)\)', chord_part)
             if duration_match:
                 chord_duration = float(duration_match.group(1))
                 chord_symbol = re.sub(
                     r'\(\d+(?:\.\d+)?\)', '', chord_part).strip()
             else:
-                chord_duration = beats_per_measure  # duração padrão baseada no compasso
+                chord_duration = beats_per_measure
                 chord_symbol = chord_part
 
+            print(
+                f"[progression_processor] Acorde parseado: symbol={chord_symbol}, duration={chord_duration}, bar={current_bar}, beat={current_beat}")
             parsed_chords.append({
                 'symbol': chord_symbol,
                 'duration': chord_duration,
@@ -130,12 +129,12 @@ class HermetoProgressionProcessor:
                 'beat': current_beat
             })
 
-            # Calcular próxima posição
             current_beat += chord_duration
             if current_beat > beats_per_measure:
                 current_bar += 1
                 current_beat = 1.0
 
+        print(f"[progression_processor] Progressão parseada: {parsed_chords}")
         return parsed_chords
 
     def _distribute_chords_in_measure(self, chord_list: List[str], beats_per_measure: float = 4.0) -> List[str]:
@@ -147,25 +146,22 @@ class HermetoProgressionProcessor:
             chord_list: Lista de acordes
             beats_per_measure: Número de beats por compasso (ex: 4.0 para 4/4, 3.0 para 3/4)
         """
+        print(
+            f"[progression_processor] Distribuindo acordes no compasso: {chord_list} para {beats_per_measure} beats")
         result = []
-
         for chord in chord_list:
             chord = chord.strip()
             if not chord:
                 continue
-
-            # Se já tem duração especificada, manter
             if re.search(r'\(\d+(?:\.\d+)?\)', chord):
                 result.append(chord)
             else:
-                # Calcular duração automática baseada no número de acordes e tipo de compasso
                 num_chords = len([c for c in chord_list if c.strip()])
-                # Dividir beats do compasso igualmente
                 auto_duration = beats_per_measure / num_chords
-
-                # Adicionar duração ao acorde
+                print(
+                    f"[progression_processor] Atribuindo duração automática: {chord}({auto_duration})")
                 result.append(f"{chord}({auto_duration})")
-
+        print(f"[progression_processor] Resultado da distribuição: {result}")
         return result
 
     def process_progression(self, progression_str: str,
@@ -175,34 +171,33 @@ class HermetoProgressionProcessor:
         """
         Processa progressão completa retornando lista de ProgressionChords
         """
+        print(
+            f"[progression_processor] Processando progressão: '{progression_str}'")
         parsed_chords = self.parse_progression_string(
             progression_str, time_signature)
         progression_chords = []
-
         for chord_info in parsed_chords:
             try:
-                # Traduzir cada acorde
+                print(
+                    f"[progression_processor] Traduzindo acorde: {chord_info['symbol']}")
                 hermeto_chord = self.translator.translate_to_hermeto_chord(
-                    chord_info['symbol']
-                )
-
-                # Criar ProgressionChord
+                    chord_info['symbol'])
                 prog_chord = ProgressionChord(
                     hermeto_chord=hermeto_chord,
-                    # Preservar exatamente como digitado
                     original_symbol=chord_info['symbol'],
                     beats=chord_info['duration'],
                     bar_number=chord_info['bar'],
                     beat_position=chord_info['beat']
                 )
-
+                print(
+                    f"[progression_processor] ProgressionChord criado: {prog_chord}")
                 progression_chords.append(prog_chord)
-
             except Exception as e:
                 print(
-                    f"Erro ao processar acorde '{chord_info['symbol']}': {e}")
+                    f"[progression_processor] Erro ao processar acorde '{chord_info['symbol']}': {e}")
                 continue
-
+        print(
+            f"[progression_processor] Progressão processada: {progression_chords}")
         return progression_chords
 
     def generate_musicxml_progression(self, progression_str: str,
@@ -214,60 +209,47 @@ class HermetoProgressionProcessor:
         """
         Gera partitura MusicXML completa para uma progressão
         """
+        print(
+            f"[progression_processor] Gerando MusicXML para progressão: '{progression_str}'")
         progression_chords = self.process_progression(
-            progression_str, time_signature, tempo_bpm, key_signature
-        )
-
+            progression_str, time_signature, tempo_bpm, key_signature)
         if not progression_chords:
+            print(
+                "[progression_processor] Nenhum acorde válido encontrado na progressão!")
             raise ValueError("Nenhum acorde válido encontrado na progressão")
-
-        # Criar score
         score = stream.Score()
-
-        # Metadados
         score.append(metadata.Metadata())
         score.metadata.title = title
         score.metadata.composer = 'Sistema Hermético - Hermeto Pascoal'
-
-        # Configurações globais
         tempo_indication = tempo.TempoIndication(
             quarterLength=1, bpm=tempo_bpm)
         score.append(tempo_indication)
         score.append(key.Key(key_signature))
         score.append(meter.TimeSignature(time_signature))
-
-        # Criar partes (mão esquerda e direita)
         right_hand_part = stream.Part()
         right_hand_part.partName = "Mão Direita (Clave de Sol)"
         right_hand_part.append(meter.TimeSignature(time_signature))
-
         left_hand_part = stream.Part()
         left_hand_part.partName = "Mão Esquerda (Clave de Fá)"
         left_hand_part.append(meter.TimeSignature(time_signature))
-
-        # Processar cada acorde da progressão
         for prog_chord in progression_chords:
             chord_duration = duration.Duration(quarterLength=prog_chord.beats)
-
-            # Adicionar símbolo de cifra no início do acorde (se habilitado)
+            print(
+                f"[progression_processor] Adicionando acorde à partitura: {prog_chord.original_symbol} (beats={prog_chord.beats}, bar={prog_chord.bar_number}, beat={prog_chord.beat_position})")
             if show_chord_symbols:
-                # Usar TextExpression simples para cifras herméticas
                 chord_text = expressions.TextExpression(
                     prog_chord.original_symbol)
                 chord_text.placement = 'above'
-                chord_text.quarterLength = 0  # Não ocupa tempo musical
+                chord_text.quarterLength = 0
                 right_hand_part.append(chord_text)
-
-            # Mão direita
             if prog_chord.hermeto_chord.right_hand_notes:
                 right_notes = []
                 for note_obj in prog_chord.hermeto_chord.right_hand_notes:
+                    print(
+                        f"[progression_processor] Mão direita: {note_obj.name}{note_obj.octave}")
                     music21_note = note.Note(
-                        pitch=f"{note_obj.name}{note_obj.octave}",
-                        quarterLength=prog_chord.beats
-                    )
+                        pitch=f"{note_obj.name}{note_obj.octave}", quarterLength=prog_chord.beats)
                     right_notes.append(music21_note)
-
                 if len(right_notes) == 1:
                     right_element = right_notes[0]
                     right_hand_part.append(right_element)
@@ -276,18 +258,18 @@ class HermetoProgressionProcessor:
                         right_notes, quarterLength=prog_chord.beats)
                     right_hand_part.append(right_element)
             else:
-                # Pausa se não há notas
+                print(
+                    f"[progression_processor] Mão direita: pausa ({prog_chord.beats} beats)")
                 rest = note.Rest(quarterLength=prog_chord.beats)
-                right_hand_part.append(rest)            # Mão esquerda
+                right_hand_part.append(rest)
             if prog_chord.hermeto_chord.left_hand_notes:
                 left_notes = []
                 for note_obj in prog_chord.hermeto_chord.left_hand_notes:
+                    print(
+                        f"[progression_processor] Mão esquerda: {note_obj.name}{note_obj.octave}")
                     music21_note = note.Note(
-                        pitch=f"{note_obj.name}{note_obj.octave}",
-                        quarterLength=prog_chord.beats
-                    )
+                        pitch=f"{note_obj.name}{note_obj.octave}", quarterLength=prog_chord.beats)
                     left_notes.append(music21_note)
-
                 if len(left_notes) == 1:
                     left_hand_part.append(left_notes[0])
                 else:
@@ -295,14 +277,13 @@ class HermetoProgressionProcessor:
                         left_notes, quarterLength=prog_chord.beats)
                     left_hand_part.append(left_chord)
             else:
-                # Pausa se não há notas
+                print(
+                    f"[progression_processor] Mão esquerda: pausa ({prog_chord.beats} beats)")
                 rest = note.Rest(quarterLength=prog_chord.beats)
                 left_hand_part.append(rest)
-
-        # Adicionar partes ao score
         score.append(right_hand_part)
         score.append(left_hand_part)
-
+        print(f"[progression_processor] MusicXML gerado com sucesso!")
         return score
 
     def export_progression_xml(self, progression_str: str,
@@ -318,15 +299,12 @@ class HermetoProgressionProcessor:
             show_chord_symbols: Se True, adiciona cifras como texto na partitura
             **kwargs: Outros parâmetros (tempo_bpm, key_signature, etc.)
         """
+        print(
+            f"[progression_processor] Exportando progressão para MusicXML: '{progression_str}' em '{filename}'")
         score = self.generate_musicxml_progression(
-            progression_str,
-            show_chord_symbols=show_chord_symbols,
-            **kwargs
-        )
-
-        # Salvar arquivo
+            progression_str, show_chord_symbols=show_chord_symbols, **kwargs)
         score.write('musicxml', fp=filename)
-
+        print(f"[progression_processor] Arquivo MusicXML salvo: {filename}")
         return filename
 
     def export_progression_midi(self, progression_str: str,
@@ -338,44 +316,36 @@ class HermetoProgressionProcessor:
 
         Note: MIDI não suporta texto, então show_chord_symbols é ignorado
         """
+        print(
+            f"[progression_processor] Exportando progressão para MIDI: '{progression_str}' em '{filename}'")
         score = self.generate_musicxml_progression(
-            progression_str,
-            show_chord_symbols=False,  # MIDI não suporta texto
-            **kwargs
-        )
-
-        # Salvar MIDI
+            progression_str, show_chord_symbols=False, **kwargs)
         score.write('midi', fp=filename)
-
+        print(f"[progression_processor] Arquivo MIDI salvo: {filename}")
         return filename
 
     def analyze_progression(self, progression_str: str) -> Dict:
         """
         Analisa progressão harmônica retornando estatísticas
         """
+        print(
+            f"[progression_processor] Analisando progressão: '{progression_str}'")
         progression_chords = self.process_progression(progression_str)
-
         if not progression_chords:
+            print("[progression_processor] Nenhum acorde encontrado para análise!")
             return {}
-
-        # Análise básica
         chord_types = {}
         total_duration = 0
         chord_symbols = []
-
         for prog_chord in progression_chords:
             chord_type = prog_chord.hermeto_chord.chord_type
             chord_types[chord_type] = chord_types.get(chord_type, 0) + 1
             total_duration += prog_chord.beats
             chord_symbols.append(prog_chord.hermeto_chord.original_cipher)
-
-        # Calcular estatísticas
+            print(
+                f"[progression_processor] Analisando acorde: {prog_chord.original_symbol} tipo={chord_type} beats={prog_chord.beats}")
         num_chords = len(progression_chords)
         avg_duration = total_duration / num_chords if num_chords > 0 else 0
-
-        # Detectar tonalidade (simplificado)
-        # TODO: Implementar análise tonal mais sofisticada
-
         analysis = {
             'total_acordes': num_chords,
             'duracao_total_beats': total_duration,
@@ -384,38 +354,36 @@ class HermetoProgressionProcessor:
             'sequencia_acordes': chord_symbols,
             'complexidade_media': self._calculate_complexity(progression_chords)
         }
-
+        print(f"[progression_processor] Resultado da análise: {analysis}")
         return analysis
 
     def _calculate_complexity(self, progression_chords: List[ProgressionChord]) -> float:
         """
         Calcula complexidade média da progressão
         """
+        print(f"[progression_processor] Calculando complexidade média da progressão...")
         if not progression_chords:
+            print("[progression_processor] Nenhum acorde para calcular complexidade.")
             return 0.0
-
         total_complexity = 0
-
         for prog_chord in progression_chords:
-            # Complexidade baseada no tipo de acorde
             chord_type = prog_chord.hermeto_chord.chord_type
-            complexity = 1.0  # base
-
+            complexity = 1.0
             if chord_type == 'dominante':
                 complexity += 1.0
             elif chord_type == 'meio-diminuto':
                 complexity += 1.5
             elif chord_type == 'sobreposto':
                 complexity += 2.0
-
-            # Complexidade baseada no número de notas
             total_notes = (len(prog_chord.hermeto_chord.left_hand_notes) +
                            len(prog_chord.hermeto_chord.right_hand_notes))
             complexity += total_notes * 0.2
-
+            print(
+                f"[progression_processor] Complexidade do acorde {prog_chord.original_symbol}: {complexity}")
             total_complexity += complexity
-
-        return total_complexity / len(progression_chords)
+        media = total_complexity / len(progression_chords)
+        print(f"[progression_processor] Complexidade média: {media}")
+        return media
 
 
 # Função de conveniência para uso rápido

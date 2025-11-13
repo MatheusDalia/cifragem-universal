@@ -245,48 +245,49 @@ class StaffDistributor:
 
     def _distribute_dominant_chord(self, note_data: Dict, root_note: str) -> Dict:
         """Distribui acordes dominantes"""
+        print(
+            f"[staff_distributor] Entrando em _distribute_dominant_chord com root_note={root_note}")
         all_notes = note_data['right_hand']
 
         if not all_notes:
+            print(
+                "[staff_distributor] Nenhuma nota encontrada para dominante, retornando distribuição vazia.")
             return self._empty_distribution()
 
-        # Separar notas
         bass_notes = []
         treble_notes = []
 
-        # Encontrar fundamental
         fundamental = None
         for note in all_notes:
             if note.name == root_note:
                 fundamental = note
+                print(
+                    f"[staff_distributor] Fundamental encontrada: {note.name}{note.octave}")
                 break
 
         if fundamental:
             bass_notes.append(fundamental)
 
-        # Encontrar quinta
         for note in all_notes:
             if note != fundamental and self._is_perfect_fifth(root_note, note.name):
                 bass_notes.append(note)
+                print(
+                    f"[staff_distributor] Quinta justa encontrada: {note.name}{note.octave}")
                 break
 
-        # Separar terça e resto das notas
         third_note = None
         other_treble_notes = []
 
-        print(f"🔍 DEBUG: Procurando terça entre as notas restantes...")
+        print(f"[staff_distributor] Procurando terça entre as notas restantes...")
         for note in all_notes:
             if note not in bass_notes:
                 print(f"   Testando {note.name}{note.octave}...")
-                # Verificar se é a terça do acorde
                 if self._is_major_third(note, root_note) or self._is_minor_third(note, root_note):
-                    # Só pegar a primeira terça encontrada (evitar sobrescrever)
                     if third_note is None:
                         third_note = note
                         print(
                             f"   ✅ Encontrada terça: {note.name}{note.octave}")
                     else:
-                        # Se já temos uma terça, esta vai para outras notas
                         other_treble_notes.append(note)
                         print(
                             f"   ⚠️  Terça adicional ignorada: {note.name}{note.octave}")
@@ -295,29 +296,26 @@ class StaffDistributor:
                     print(
                         f"   ➕ Adicionada às outras: {note.name}{note.octave}")
 
-        # Adicionar terça à mão esquerda
         if third_note:
             bass_notes.append(third_note)
             print(
-                f"🎵 Terça {third_note.name}{third_note.octave} adicionada à mão esquerda")
+                f"[staff_distributor] Terça {third_note.name}{third_note.octave} adicionada à mão esquerda")
         else:
-            print("❌ Nenhuma terça encontrada!")
+            print("[staff_distributor] Nenhuma terça encontrada!")
 
-        # Resto vai para mão direita
         treble_notes = other_treble_notes
 
-        # Garantir tônica mais grave na mão esquerda
         if len(bass_notes) > 1:
-            # Ordenar notas da mão esquerda por altura MIDI
             bass_notes_with_midi = [(note, self._note_to_midi(note))
                                     for note in bass_notes]
-            bass_notes_with_midi.sort(key=lambda x: x[1])  # Ordenar por MIDI
+            bass_notes_with_midi.sort(key=lambda x: x[1])
             bass_notes = [note for note, midi in bass_notes_with_midi]
+            print(
+                f"[staff_distributor] Bass notes ordenadas por altura MIDI: {[note.name+str(note.octave) for note in bass_notes]}")
 
-        # Para acordes dominantes, descer mão esquerda uma oitava
         adjusted_bass_notes = []
         for note in bass_notes:
-            if note.octave > 1:  # Evitar oitavas muito graves (menores que 1)
+            if note.octave > 1:
                 lower_note = Note(
                     name=note.name,
                     octave=note.octave - 1,
@@ -325,19 +323,19 @@ class StaffDistributor:
                     enharmonic=getattr(note, 'enharmonic', note.name)
                 )
                 adjusted_bass_notes.append(lower_note)
+                print(
+                    f"[staff_distributor] Baixando {note.name}{note.octave} para {lower_note.name}{lower_note.octave}")
             else:
                 adjusted_bass_notes.append(note)
 
-        # Descer a nota mais aguda da mão direita uma oitava
         adjusted_treble_notes = []
         if treble_notes:
-            # Encontrar a nota mais aguda
             highest_note = max(
                 treble_notes, key=lambda n: self._note_to_midi(n))
-
+            print(
+                f"[staff_distributor] Nota mais aguda da mão direita: {highest_note.name}{highest_note.octave}")
             for note in treble_notes:
-                if note == highest_note and note.octave > 2:  # Evitar oitavas muito graves
-                    # Descer uma oitava
+                if note == highest_note and note.octave > 2:
                     lower_note = Note(
                         name=note.name,
                         octave=note.octave - 1,
@@ -345,11 +343,15 @@ class StaffDistributor:
                         enharmonic=getattr(note, 'enharmonic', note.name)
                     )
                     adjusted_treble_notes.append(lower_note)
+                    print(
+                        f"[staff_distributor] Baixando {note.name}{note.octave} para {lower_note.name}{lower_note.octave}")
                 else:
                     adjusted_treble_notes.append(note)
         else:
             adjusted_treble_notes = treble_notes
 
+        print(
+            f"[staff_distributor] Distribuição dominante finalizada. Mão esquerda: {[note.name+str(note.octave) for note in adjusted_bass_notes]}, Mão direita: {[note.name+str(note.octave) for note in adjusted_treble_notes]}")
         return {
             'left_hand': adjusted_bass_notes,
             'right_hand': adjusted_treble_notes
@@ -357,12 +359,15 @@ class StaffDistributor:
 
     def _distribute_meio_diminuto_chord(self, note_data: Dict, root_note: str) -> Dict:
         """Distribui acordes meio-diminutos garantindo tônica no baixo"""
+        print(
+            f"[staff_distributor] Entrando em _distribute_meio_diminuto_chord com root_note={root_note}")
         all_notes = note_data['right_hand']
 
         if not all_notes:
+            print(
+                "[staff_distributor] Nenhuma nota encontrada para meio-diminuto, retornando distribuição vazia.")
             return self._empty_distribution()
 
-        # Mapear nomes de notas para números MIDI (base C = 0)
         note_map = {
             'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
             'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
@@ -378,17 +383,23 @@ class StaffDistributor:
             val = note_map.get(note_name, -1)
             interval = (val - root_val) % 12
 
-            # Mão esquerda: tríade diminuta (tônica, terça menor, quinta diminuta)
-            if interval == 0:  # tônica
+            if interval == 0:
                 bass_notes.append(note)
-            elif interval == 3:  # terça menor
+                print(
+                    f"[staff_distributor] Tônica encontrada: {note.name}{note.octave}")
+            elif interval == 3:
                 bass_notes.append(note)
-            elif interval == 6:  # quinta diminuta
+                print(
+                    f"[staff_distributor] Terça menor encontrada: {note.name}{note.octave}")
+            elif interval == 6:
                 bass_notes.append(note)
+                print(
+                    f"[staff_distributor] Quinta diminuta encontrada: {note.name}{note.octave}")
             else:
                 treble_notes.append(note)
+                print(
+                    f"[staff_distributor] Nota adicionada à mão direita: {note.name}{note.octave}")
 
-        # Descer mão esquerda uma oitava se necessário
         adjusted_bass_notes = []
         for note in bass_notes:
             if note.octave > 1:
@@ -399,9 +410,13 @@ class StaffDistributor:
                     enharmonic=getattr(note, 'enharmonic', note.name)
                 )
                 adjusted_bass_notes.append(lower_note)
+                print(
+                    f"[staff_distributor] Baixando {note.name}{note.octave} para {lower_note.name}{lower_note.octave}")
             else:
                 adjusted_bass_notes.append(note)
 
+        print(
+            f"[staff_distributor] Distribuição meio-diminuto finalizada. Mão esquerda: {[note.name+str(note.octave) for note in adjusted_bass_notes]}, Mão direita: {[note.name+str(note.octave) for note in treble_notes]}")
         return {
             'left_hand': adjusted_bass_notes,
             'right_hand': treble_notes

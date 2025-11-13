@@ -41,6 +41,7 @@ class HermetoTranslator:
     """
 
     def __init__(self):
+        print("[hermeto_translator] Inicializando HermetoTranslator...")
         self.parser = ChordParser()
         self.interval_converter = IntervalConverter()
         self.note_generator = NoteGenerator()
@@ -48,6 +49,8 @@ class HermetoTranslator:
         self.score_generator = ScoreGenerator()
 
     def translate(self, cipher: str):
+        print(
+            f"[hermeto_translator] translate: Traduzindo cifra '{cipher}' para partitura.")
         """
         Traduz uma cifra hermética completa para partitura de piano
 
@@ -59,22 +62,31 @@ class HermetoTranslator:
         """
         # 1. Parse da cifra
         parsed_data = self.parser.parse(cipher)
+        print(f"[hermeto_translator] Etapa 1: Dados parseados: {parsed_data}")
 
         # 2. Conversão de símbolos para intervalos
         intervals = self.interval_converter.convert(parsed_data)
+        print(
+            f"[hermeto_translator] Etapa 2: Intervalos convertidos: {intervals}")
 
-        # 3. Geração de notas absolutas - CORRIGIR: só passar parsed_data
+        # 3. Geração de notas absolutas
         notes = self.note_generator.generate(parsed_data)
+        print(f"[hermeto_translator] Etapa 3: Notas geradas: {notes}")
 
         # 4. Distribuição nas claves
         staff_notes = self.staff_distributor.distribute(notes, parsed_data)
+        print(
+            f"[hermeto_translator] Etapa 4: Notas distribuídas: {staff_notes}")
 
         # 5. Geração da partitura final
         score = self.score_generator.create_score(staff_notes)
+        print(f"[hermeto_translator] Etapa 5: Partitura gerada: {score}")
 
         return score
 
     def translate_to_hermeto_chord(self, cipher: str) -> HermetoChord:
+        print(
+            f"[hermeto_translator] translate_to_hermeto_chord: Traduzindo cifra '{cipher}' para HermetoChord.")
         """
         Traduz cifra para objeto HermetoChord com informações detalhadas
 
@@ -86,21 +98,30 @@ class HermetoTranslator:
         """
         # Parse completo
         parsed_data = self.parser.parse(cipher)
+        print(f"[hermeto_translator] Etapa 1: Dados parseados: {parsed_data}")
         intervals = self.interval_converter.convert(parsed_data)
+        print(
+            f"[hermeto_translator] Etapa 2: Intervalos convertidos: {intervals}")
 
-        # CORRIGIR: só passar parsed_data
         notes = self.note_generator.generate(parsed_data)
+        print(f"[hermeto_translator] Etapa 3: Notas geradas: {notes}")
         staff_notes = self.staff_distributor.distribute(notes, parsed_data)
+        print(
+            f"[hermeto_translator] Etapa 4: Notas distribuídas: {staff_notes}")
 
-        return HermetoChord(
+        hermeto_chord = HermetoChord(
             original_cipher=cipher,
             left_hand_notes=staff_notes['left_hand'],
             right_hand_notes=staff_notes['right_hand'],
             chord_type=parsed_data['chord_type'],
             intervals=intervals['all_intervals']
         )
+        print(f"[hermeto_translator] Resultado HermetoChord: {hermeto_chord}")
+        return hermeto_chord
 
     def batch_translate(self, ciphers: List[str]) -> List:
+        print(
+            f"[hermeto_translator] batch_translate: Traduzindo lista de cifras: {ciphers}")
         """
         Traduz múltiplas cifras de uma vez
 
@@ -110,9 +131,13 @@ class HermetoTranslator:
         Returns:
             List: Lista de partituras traduzidas
         """
-        return [self.translate(cipher) for cipher in ciphers]
+        results = [self.translate(cipher) for cipher in ciphers]
+        print(f"[hermeto_translator] batch_translate: Resultados: {results}")
+        return results
 
     def get_chord_info(self, cipher: str) -> Dict:
+        print(
+            f"[hermeto_translator] get_chord_info: Buscando informações detalhadas para cifra '{cipher}'")
         """
         Retorna informações detalhadas sobre uma cifra sem gerar partitura
 
@@ -123,6 +148,7 @@ class HermetoTranslator:
             Dict: Informações estruturadas sobre o acorde
         """
         hermeto_chord = self.translate_to_hermeto_chord(cipher)
+        print(f"[hermeto_translator] Objeto HermetoChord: {hermeto_chord}")
 
         # Converter objetos Note em dicionários para JSON
         def note_to_dict(note):

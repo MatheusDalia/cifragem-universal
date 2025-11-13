@@ -55,6 +55,7 @@ class ScoreGenerator:
     """
 
     def __init__(self):
+        print("[score_generator] Inicializando ScoreGenerator...")
         # Configurar environment do music21
         try:
             self.env = environment.Environment()
@@ -75,6 +76,8 @@ class ScoreGenerator:
             self.note_duration = None
 
     def _setup_musescore(self):
+        print(
+            "[score_generator] _setup_musescore: Configurando MuseScore para exportação de imagens.")
         """
         Configura MuseScore para exportação de imagens
         """
@@ -95,6 +98,8 @@ class ScoreGenerator:
             print(f"Warning: Could not configure MuseScore: {e}")
 
     def create_score(self, staff_data: Dict):
+        print(
+            f"[score_generator] create_score: Criando partitura para dados: {staff_data}")
         """
         Cria partitura completa a partir das notas distribuídas
 
@@ -105,6 +110,8 @@ class ScoreGenerator:
             Score object (music21.stream.Score se disponível, dict caso contrário)
         """
         if 'stream' not in globals():
+            print(
+                "[score_generator] Fallback: music21 não disponível, retornando dados estruturados.")
             # Fallback sem music21: retornar dados estruturados
             return {
                 'type': 'simple_score',
@@ -119,39 +126,51 @@ class ScoreGenerator:
 
         try:
             # Criar score principal
+            print("[score_generator] Criando score principal.")
             score = stream.Score()
 
             # Adicionar metadados
+            print("[score_generator] Adicionando metadados.")
             score.metadata = self._create_metadata(staff_data)
 
             # Adicionar armadura e compasso
             if self.default_key:
+                print(
+                    f"[score_generator] Adicionando armadura de clave: {self.default_key}")
                 score.append(self.default_key)
             if self.default_time:
+                print(
+                    f"[score_generator] Adicionando compasso: {self.default_time}")
                 score.append(self.default_time)
 
             # Criar parte da mão direita (clave de Sol)
+            print("[score_generator] Criando parte da mão direita (clave de Sol).")
             treble_part = self._create_treble_part(staff_data['right_hand'])
             treble_part.partName = "Mão Direita"
             treble_part.partAbbreviation = "MD"
             score.append(treble_part)
 
             # Criar parte da mão esquerda (clave de Fá)
+            print("[score_generator] Criando parte da mão esquerda (clave de Fá).")
             bass_part = self._create_bass_part(staff_data['left_hand'])
             bass_part.partName = "Mão Esquerda"
             bass_part.partAbbreviation = "ME"
             score.append(bass_part)
 
             # Aplicar formatação de piano
+            print("[score_generator] Aplicando formatação de piano.")
             self._format_piano_score(score)
 
+            print("[score_generator] Partitura criada com sucesso.")
             return score
 
         except Exception as e:
-            print(f"Error creating score: {e}")
+            print(f"[score_generator] Error creating score: {e}")
             return self._create_fallback_score(staff_data)
 
     def _create_treble_part(self, notes: List[Note]) -> 'stream.Part':
+        print(
+            f"[score_generator] _create_treble_part: Criando parte da clave de Sol para notas: {notes}")
         """
         Cria parte da clave de Sol (mão direita)
 
@@ -182,6 +201,8 @@ class ScoreGenerator:
         return part
 
     def _create_bass_part(self, notes: List[Note]) -> 'stream.Part':
+        print(
+            f"[score_generator] _create_bass_part: Criando parte da clave de Fá para notas: {notes}")
         """
         Cria parte da clave de Fá (mão esquerda)
 
@@ -212,6 +233,8 @@ class ScoreGenerator:
         return part
 
     def _note_to_music21(self, our_note: Note) -> 'note.Note':
+        print(
+            f"[score_generator] _note_to_music21: Convertendo nota para music21: {our_note}")
         """
         Converte nossa classe Note para music21.note.Note
 
@@ -236,6 +259,8 @@ class ScoreGenerator:
             return note.Note('C4', duration=self.note_duration)
 
     def _create_chord(self, notes: List[Note]) -> 'note.Note':
+        print(
+            f"[score_generator] _create_chord: Criando acorde para notas: {notes}")
         """
         Cria acorde music21 a partir de lista de notas
 
@@ -266,6 +291,8 @@ class ScoreGenerator:
                 return note.Note('C4', duration=self.note_duration)
 
     def _create_metadata(self, staff_data: Dict) -> 'stream.Metadata':
+        print(
+            f"[score_generator] _create_metadata: Criando metadados para dados: {staff_data}")
         """
         Cria metadados da partitura
 
@@ -289,6 +316,8 @@ class ScoreGenerator:
             return None
 
     def _format_piano_score(self, score: 'stream.Score'):
+        print(
+            f"[score_generator] _format_piano_score: Aplicando formatação de piano ao score.")
         """
         Aplica formatação específica para piano
 
@@ -305,6 +334,8 @@ class ScoreGenerator:
             print(f"Warning: Could not apply piano formatting: {e}")
 
     def _create_fallback_score(self, staff_data: Dict) -> 'stream.Score':
+        print(
+            f"[score_generator] _create_fallback_score: Criando score fallback para dados: {staff_data}")
         """
         Cria score simples em caso de erro
 
@@ -325,6 +356,8 @@ class ScoreGenerator:
             return None
 
     def save_score(self, score: 'stream.Score', filepath: str, format: str = 'png') -> bool:
+        print(
+            f"[score_generator] save_score: Salvando score em '{filepath}' no formato '{format}'")
         """
         Salva partitura em arquivo
 
@@ -362,6 +395,7 @@ class ScoreGenerator:
             return False
 
     def show_score(self, score: 'stream.Score'):
+        print(f"[score_generator] show_score: Exibindo score: {score}")
         """
         Exibe partitura (abre no visualizador padrão)
 
@@ -375,6 +409,8 @@ class ScoreGenerator:
             print(f"Error showing score: {e}")
 
     def score_to_midi_data(self, score: 'stream.Score') -> Optional[bytes]:
+        print(
+            f"[score_generator] score_to_midi_data: Convertendo score para MIDI: {score}")
         """
         Converte partitura para dados MIDI
 
@@ -397,6 +433,8 @@ class ScoreGenerator:
             return None
 
     def score_to_png_data(self, score: 'stream.Score') -> Optional[bytes]:
+        print(
+            f"[score_generator] score_to_png_data: Convertendo score para PNG: {score}")
         """
         Converte partitura para dados PNG
 
@@ -480,6 +518,8 @@ class ScoreGenerator:
             return None
 
     def get_score_info(self, score: 'stream.Score') -> Dict:
+        print(
+            f"[score_generator] get_score_info: Buscando informações do score: {score}")
         """
         Retorna informações sobre a partitura
 

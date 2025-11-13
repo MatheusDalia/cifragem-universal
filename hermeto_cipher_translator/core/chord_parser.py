@@ -34,6 +34,7 @@ class ChordParser:
     """
 
     def __init__(self):
+        print("[chord_parser] Inicializando ChordParser...")
         # Regex patterns para diferentes tipos de acordes
         self.patterns = {
             'note': r'[A-G][#b]?',
@@ -46,6 +47,7 @@ class ChordParser:
         }
 
     def parse(self, cipher: str) -> Dict:
+        print(f"[chord_parser] parse: Recebido cifra '{cipher}' para parsing.")
         """
         Parse principal de uma cifra hermética
 
@@ -56,14 +58,18 @@ class ChordParser:
             Dict: Dados estruturados do acorde parseado
         """
         cipher = cipher.strip()
-
+        print(f"[chord_parser] Limpo cifra: '{cipher}'")
         # Verificar se é acorde sobreposto (tem barra /)
         if '/' in cipher:
+            print(f"[chord_parser] Detecção de acorde sobreposto (com barra)")
             return self._parse_slash_chord(cipher)
         else:
+            print(f"[chord_parser] Detecção de acorde simples (sem barra)")
             return self._parse_simple_chord(cipher)
 
     def _parse_slash_chord(self, cipher: str) -> Dict:
+        print(
+            f"[chord_parser] _parse_slash_chord: Parsing cifra sobreposta '{cipher}'")
         """
         Parse de acordes sobrepostos (formato: direita/esquerda)
 
@@ -75,18 +81,23 @@ class ChordParser:
         """
         parts = cipher.split('/')
         if len(parts) != 2:
+            print(f"[chord_parser] Erro: cifra sobreposta inválida!")
             raise ValueError(f"Cifra sobreposta inválida: {cipher}")
 
         right_part = parts[0].strip()  # Mão direita (antes da barra)
         left_part = parts[1].strip()   # Mão esquerda (depois da barra)
+        print(
+            f"[chord_parser] Mão direita: '{right_part}', Mão esquerda: '{left_part}'")
 
         # Parse da parte direita
         right_data = self._parse_chord_part(right_part)
+        print(f"[chord_parser] Dados da mão direita: {right_data}")
 
         # Parse da parte esquerda
         left_data = self._parse_chord_part(left_part)
+        print(f"[chord_parser] Dados da mão esquerda: {left_data}")
 
-        return {
+        result = {
             'original': cipher,
             'chord_type': 'sobreposto',
             'root': right_data['root'],
@@ -94,8 +105,12 @@ class ChordParser:
             'left_hand': left_data,
             'has_slash': True
         }
+        print(f"[chord_parser] Resultado do parsing sobreposto: {result}")
+        return result
 
     def _parse_simple_chord(self, cipher: str) -> Dict:
+        print(
+            f"[chord_parser] _parse_simple_chord: Parsing cifra simples '{cipher}'")
         """
         Parse de acordes simples (sem barra)
 
@@ -106,8 +121,8 @@ class ChordParser:
             Dict: Dados do acorde simples
         """
         chord_data = self._parse_chord_part(cipher)
-
-        return {
+        print(f"[chord_parser] Dados do acorde simples: {chord_data}")
+        result = {
             'original': cipher,
             'chord_type': chord_data['type'],
             'root': chord_data['root'],
@@ -115,8 +130,11 @@ class ChordParser:
             'left_hand': {'type': 'empty', 'root': None, 'intervals': []},
             'has_slash': False
         }
+        print(f"[chord_parser] Resultado do parsing simples: {result}")
+        return result
 
     def _parse_chord_part(self, part: str) -> Dict:
+        print(f"[chord_parser] _parse_chord_part: Parsing parte '{part}'")
         """
         Parse de uma parte individual do acorde
 
@@ -129,25 +147,34 @@ class ChordParser:
         # Extrair nota fundamental
         root_match = re.match(r'^([A-G][#b]?)', part)
         if not root_match:
+            print(f"[chord_parser] Erro: nota fundamental não encontrada!")
             raise ValueError(f"Nota fundamental não encontrada em: {part}")
 
         root = root_match.group(1)
         remaining = part[len(root):]
+        print(
+            f"[chord_parser] Nota fundamental extraída: '{root}', restante: '{remaining}'")
 
         # Determinar tipo de acorde baseado no conteúdo
         chord_type = self._determine_chord_type(remaining)
+        print(f"[chord_parser] Tipo de acorde determinado: '{chord_type}'")
 
         # Extrair intervalos e alterações
         intervals = self._extract_intervals(remaining)
+        print(f"[chord_parser] Intervalos extraídos: {intervals}")
 
-        return {
+        result = {
             'type': chord_type,
             'root': root,
             'intervals': intervals,
             'original_part': part
         }
+        print(f"[chord_parser] Resultado do parsing da parte: {result}")
+        return result
 
     def _determine_chord_type(self, remaining: str) -> str:
+        print(
+            f"[chord_parser] _determine_chord_type: Determinando tipo para '{remaining}'")
         """
         Determina o tipo de acorde baseado nos símbolos
 
@@ -158,43 +185,55 @@ class ChordParser:
             str: Tipo do acorde
         """
         if not remaining:
+            print(f"[chord_parser] Tipo: maior (apenas nota)")
             return 'maior'  # Apenas a letra = tríade maior
 
         # Tétrades conhecidas
         if re.search(r'^(m7|7|maj7|M7)$', remaining):
+            print(f"[chord_parser] Tipo: tetrade")
             return 'tetrade'
 
         # Acorde maior expandido hermético (ex: 7+, 7+9+11+) - deve vir ANTES de dominante
         if '7+' in remaining:
+            print(f"[chord_parser] Tipo: maior (hermético 7+)")
             return 'maior'
 
         # Acorde menor (começa com -)
         if remaining.startswith('-'):
             # Meio-diminuto se tem -5-
             if '-5-' in remaining:
+                print(f"[chord_parser] Tipo: meio-diminuto")
                 return 'meio-diminuto'
             else:
+                print(f"[chord_parser] Tipo: menor")
                 return 'menor'
 
         # Dominante com alterações (números + alterações, mas SEM 7+)
         if re.search(r'\d+[+\-]', remaining) and '7+' not in remaining:
+            print(f"[chord_parser] Tipo: dominante (alterações)")
             return 'dominante'
 
         # Outros acordes maiores expandidos
         if '+' in remaining and ('7' in remaining or '9' in remaining):
+            print(f"[chord_parser] Tipo: maior (expansão)")
             return 'maior'
 
         # Suspenso (apenas números sem sinais de +/-)
         if re.search(r'^\s*\d+(\s+\d+)*\s*$', remaining.replace(' ', '')):
+            print(f"[chord_parser] Tipo: suspenso")
             return 'suspenso'
 
         # Intervalos explícitos (números com ou sem alterações)
         if re.search(r'\d', remaining):
+            print(f"[chord_parser] Tipo: intervalos")
             return 'intervalos'
 
+        print(f"[chord_parser] Tipo: maior (default)")
         return 'maior'  # Default
 
     def _extract_intervals(self, intervals_str: str) -> List[str]:
+        print(
+            f"[chord_parser] _extract_intervals: Extraindo intervalos de '{intervals_str}'")
         """
         Extrai intervalos de uma string como '79+13-' -> ['7', '9+', '13-']
 

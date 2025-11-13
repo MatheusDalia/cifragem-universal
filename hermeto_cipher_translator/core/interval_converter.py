@@ -29,6 +29,7 @@ class IntervalConverter:
     """
 
     def __init__(self):
+        print("[interval_converter] Inicializando IntervalConverter...")
         # Mapeamento base de intervalos herméticos
         self.base_intervals = {
             '1': Interval(1, 'J', 0, 'uníssono'),
@@ -80,6 +81,8 @@ class IntervalConverter:
         }
 
     def convert(self, parsed_data: Dict) -> Dict:
+        print(
+            f"[interval_converter] convert: Convertendo dados parseados: {parsed_data}")
         """
         Converte dados parseados em intervalos musicais
 
@@ -91,16 +94,21 @@ class IntervalConverter:
         """
         # Detectar se é acorde sobreposto
         if parsed_data.get('has_slash', False):
+            print("[interval_converter] Detecção de acorde sobreposto (com barra)")
             # Acordes sobrepostos: processar cada parte separadamente
             right_intervals = self._get_automatic_extensions(
                 parsed_data['right_hand'], 'direita'
             )
+            print(
+                f"[interval_converter] Intervalos mão direita: {right_intervals}")
             left_intervals = self._get_automatic_extensions(
-                # IMPORTANTE: contexto 'baixo'
                 parsed_data['left_hand'], 'baixo'
             )
+            print(
+                f"[interval_converter] Intervalos mão esquerda: {left_intervals}")
 
             all_intervals = right_intervals + left_intervals
+            print(f"[interval_converter] Todos intervalos: {all_intervals}")
 
             return {
                 'right_hand': right_intervals,
@@ -113,7 +121,10 @@ class IntervalConverter:
             right_intervals = self._get_automatic_extensions(
                 parsed_data['right_hand'], 'direita'
             )
+            print(
+                f"[interval_converter] Intervalos mão direita: {right_intervals}")
 
+            print(f"[interval_converter] Todos intervalos: {right_intervals}")
             return {
                 'right_hand': right_intervals,
                 'left_hand': [],
@@ -122,6 +133,8 @@ class IntervalConverter:
             }
 
     def _convert_chord_part(self, part_data: Dict, context: str) -> List[Interval]:
+        print(
+            f"[interval_converter] _convert_chord_part: Convertendo parte '{part_data}' no contexto '{context}'")
         """
         Converte uma parte específica (direita ou esquerda) para intervalos
 
@@ -159,6 +172,8 @@ class IntervalConverter:
         return unique_intervals
 
     def _parse_interval_string(self, interval_str: str, context: str) -> Interval:
+        print(
+            f"[interval_converter] _parse_interval_string: Convertendo string '{interval_str}' no contexto '{context}'")
         """
         Converte string de intervalo (ex: "5+", "7-", "9") para objeto Interval
 
@@ -193,6 +208,8 @@ class IntervalConverter:
         return self._adjust_for_context(base_interval, context)
 
     def _adjust_for_context(self, interval: Interval, context: str) -> Interval:
+        print(
+            f"[interval_converter] _adjust_for_context: Ajustando intervalo '{interval}' para contexto '{context}'")
         """
         Ajusta intervalo baseado no contexto harmônico
 
@@ -214,6 +231,8 @@ class IntervalConverter:
         return interval
 
     def _get_automatic_extensions(self, part_data: Dict, context: str) -> List[Interval]:
+        print(
+            f"[interval_converter] _get_automatic_extensions: Gerando extensões automáticas para parte '{part_data}' no contexto '{context}'")
         """
         Retorna extensões automáticas baseadas no tipo de acorde
 
@@ -441,6 +460,8 @@ class IntervalConverter:
         return extensions
 
     def _create_fallback_interval(self, number: str, alteration: str) -> Interval:
+        print(
+            f"[interval_converter] _create_fallback_interval: Criando fallback para número '{number}' com alteração '{alteration}'")
         """
         Cria intervalo para números não mapeados
 
@@ -479,6 +500,8 @@ class IntervalConverter:
             return Interval(1, 'J', 0, 'uníssono')
 
     def get_interval_name(self, interval: Interval) -> str:
+        print(
+            f"[interval_converter] get_interval_name: Nome para intervalo '{interval}'")
         """
         Retorna nome legível do intervalo
 
@@ -491,6 +514,8 @@ class IntervalConverter:
         return interval.name
 
     def intervals_to_semitones(self, intervals: List[Interval]) -> List[int]:
+        print(
+            f"[interval_converter] intervals_to_semitones: Convertendo intervalos para semitons: {intervals}")
         """
         Converte lista de intervalos para lista de semitons
 

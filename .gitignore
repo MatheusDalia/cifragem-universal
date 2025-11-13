@@ -1,3 +1,12 @@
 Escrita do TCC/
 *.env
-hermeto_cipher_translator/.env
+hermeto_cipher_translator/.env__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg-info/
+.DS_Store

@@ -27,6 +27,7 @@ class NoteGenerator:
     """
 
     def __init__(self):
+        print("[note_generator] Inicializando NoteGenerator...")
         # Inicializar o interval converter
         self.interval_converter = IntervalConverter()
 
@@ -59,6 +60,8 @@ class NoteGenerator:
         }
 
     def generate(self, parsed_data: Dict) -> Dict:
+        print(
+            f"[note_generator] generate: Gerando notas para dados parseados: {parsed_data}")
         """
         Gera notas musicais baseadas nos dados parseados
 
@@ -69,13 +72,22 @@ class NoteGenerator:
             Dict: Notas organizadas por mão
         """
         if parsed_data.get('has_slash', False):
+            print("[note_generator] Detecção de acorde sobreposto (com barra)")
             # Acordes sobrepostos: processar cada parte separadamente
-            return self._generate_slash_chord(parsed_data)
+            result = self._generate_slash_chord(parsed_data)
+            print(
+                f"[note_generator] Notas geradas para acorde sobreposto: {result}")
+            return result
         else:
             # Acordes simples: processar como antes
-            return self._generate_regular_chord(parsed_data)
+            result = self._generate_regular_chord(parsed_data)
+            print(
+                f"[note_generator] Notas geradas para acorde regular: {result}")
+            return result
 
     def _generate_slash_chord(self, parsed_data: Dict) -> Dict:
+        print(
+            f"[note_generator] _generate_slash_chord: Gerando notas para acorde sobreposto: {parsed_data}")
         """
         Gera notas para acordes sobrepostos (slash chords)
         """
@@ -123,6 +135,8 @@ class NoteGenerator:
         }
 
     def _generate_regular_chord(self, parsed_data: Dict) -> Dict:
+        print(
+            f"[note_generator] _generate_regular_chord: Gerando notas para acorde regular: {parsed_data}")
         """
         Gera notas para acordes regulares (não sobrepostos)
         """
@@ -150,6 +164,8 @@ class NoteGenerator:
         }
 
     def _generate_note_from_interval(self, root_note: str, interval, default_octave: int):
+        print(
+            f"[note_generator] _generate_note_from_interval: Gerando nota a partir de root '{root_note}', intervalo '{interval}', oitava padrão {default_octave}")
         """
         Gera uma nota a partir de um intervalo
         """
@@ -188,6 +204,8 @@ class NoteGenerator:
         return self._create_note(target_note_name, final_octave, f"{target_note_name}{final_octave}")
 
     def _create_note(self, name: str, octave: int, full_name: str) -> Note:
+        print(
+            f"[note_generator] _create_note: Criando nota '{name}' na oitava {octave} (nome completo: {full_name})")
         """Cria um objeto Note"""
         midi_number = (octave + 1) * 12 + self.note_to_semitone[name]
         enharmonic = name  # Simplificado por agora
@@ -200,6 +218,8 @@ class NoteGenerator:
         )
 
     def _midi_to_note_name(self, midi_value: int) -> str:
+        print(
+            f"[note_generator] _midi_to_note_name: Convertendo valor MIDI {midi_value} para nome de nota")
         """Converte valor MIDI para nome da nota"""
         semitone = midi_value % 12
         return self.semitone_to_note[semitone][0]  # Primeira opção
