@@ -699,6 +699,40 @@ def create_app():
             'supported_formats': ['json', 'png', 'midi', 'xml'],
         })
 
+    @app.route('/examples')
+    def examples():
+        """
+        Endpoint para fornecer exemplos de cifras herméticas
+        """
+        examples = {
+            'Acordes Básicos': {
+                'C': {'description': 'Acorde de Dó maior básico'},
+                'Am': {'description': 'Acorde de Lá menor'},
+                'F': {'description': 'Acorde de Fá maior'},
+                'G': {'description': 'Acorde de Sol maior'}
+            },
+            'Acordes com Sétima': {
+                'C7': {'description': 'Dó maior com sétima menor'},
+                'Am7': {'description': 'Lá menor com sétima menor'},
+                'F7+': {'description': 'Fá maior com sétima maior'},
+                'G7': {'description': 'Sol dominante'}
+            },
+            'Acordes Herméticos': {
+                'C458': {'description': 'Dó maior com 4ª, 5ª e 8ª justas'},
+                'Am379': {'description': 'Lá menor com 3ª, 7ª e 9ª'},
+                'F7+13+': {'description': 'Fá maior com 7ª e 13ª maiores'},
+                'G-479': {'description': 'Sol menor com 4ª, 7ª e 9ª'}
+            },
+            'Acordes Complexos': {
+                'C/E': {'description': 'Dó maior com baixo em Mi'},
+                'Am/C': {'description': 'Lá menor com baixo em Dó'},
+                'F79+13-': {'description': 'Fá com 7ª menor, 9ª maior e 13ª menor'},
+                'G-479+11+': {'description': 'Sol menor complexo com tensões'}
+            }
+        }
+
+        return jsonify({'examples': examples})
+
     # OCR Endpoints
     @app.route('/ocr', methods=['GET'])
     def ocr_interface():
