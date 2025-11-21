@@ -46,7 +46,17 @@ class StaffDistributor:
             distribution = self._distribute_default(note_data)
 
         # Aplicar ajuste de oitava se necessário
-        return self._adjust_octave_if_needed(distribution)
+        distribution = self._adjust_octave_if_needed(distribution)
+
+        # Garante que as notas em cada mão estejam em ordem ascendente de altura
+        if 'left_hand' in distribution:
+            distribution['left_hand'] = self._ensure_ascending_pitch(
+                distribution['left_hand'])
+        if 'right_hand' in distribution:
+            distribution['right_hand'] = self._ensure_ascending_pitch(
+                distribution['right_hand'])
+
+        return distribution
 
     def _distribute_slash_chord(self, note_data: Dict, chord_info: Dict) -> Dict:
         """
@@ -572,3 +582,40 @@ class StaffDistributor:
         # Calcula o intervalo em semitons
         interval = (note_midi - root_midi) % 12
         return interval == 3
+
+    def _ensure_ascending_pitch(self, notes: List[Note]) -> List[Note]:
+        """
+        Garante que uma lista de notas esteja em ordem ascendente de altura,
+        ajustando a oitava conforme necessário.
+        """
+        if not notes:
+            return []
+
+        # A primeira nota serve como referência inicial
+        for i in range(1, len(notes)):
+            previous_note = notes[i-1]
+            current_note = notes[i]
+
+            # Enquanto a nota atual for mais grave ou igual à anterior, sobe a oitava
+            while current_note.midi_number <= previous_note.midi_number:
+                current_note.octave += 1
+                current_note.midi_number += 12  # Atualizar midi_number também!
+
+        return notes
+
+    def distribute_notes(self, notes: List[Note], parsed_data: Dict) -> Dict:
+        # ... existing code ...
+        # A ordem original dos intervalos na cifra é mais importante, então a ordenação foi desativada.
+        # notes.sort(key=lambda n: n.sort_key)
+
+        # ... existing code ...
+
+        # Garante que as notas em cada mão estejam em ordem ascendente de altura
+        left_hand_notes = self._ensure_ascending_pitch(left_hand_notes)
+        right_hand_notes = self._ensure_ascending_pitch(right_hand_notes)
+
+        return {
+            'left_hand': left_hand_notes,
+            'right_hand': right_hand_notes,
+            'original': parsed_data.get('original', '')
+        }
