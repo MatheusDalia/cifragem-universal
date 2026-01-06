@@ -9,6 +9,8 @@ import tempfile
 import os
 from pathlib import Path
 import json
+import io
+import zipfile
 
 # Import dos módulos do tradutor
 try:
@@ -879,6 +881,505 @@ def create_app():
                 'success': False,
                 'error': str(e)
             }), 500
+
+    # --- New: Upload MusicXML and add decoded universal chords ---
+    @app.route('/upload_xml', methods=['GET'])
+    def upload_xml_page():
+        """Página para upload de MusicXML (Dropzone)"""
+        return render_template('upload_xml.html')
+
+    @app.route('/upload_xml', methods=['POST'])
+    def upload_xml_process():
+        """Recebe um arquivo MusicXML, extrai textos de cifra, decifra e adiciona dois pentagramas com as notas dos acordes."""
+        try:
+            if 'file' not in request.files:
+                return jsonify({'error': 'Nenhum arquivo fornecido'}), 400
+
+            file = request.files['file']
+            if file.filename == '':
+                return jsonify({'error': 'Nenhum arquivo selecionado'}), 400
+
+            # Salvar temporariamente
+            with tempfile.NamedTemporaryFile(suffix='.xml', delete=False) as tmp:
+                file.save(tmp.name)
+                tmp_path = tmp.name
+
+            # Importar music21 localmente (não quebrar app se não existir)
+            try:
+                from music21 import converter, expressions, harmony, meter, note as m21note, chord as m21chord, stream as m21stream, duration as m21duration
+            except Exception as e:
+                os.unlink(tmp_path)
+                return jsonify({'error': f'music21 is required for this operation: {e}'}), 500
+
+            # Parse do arquivo
+            score = None
+            try:
+                # Detect ZIP-based MusicXML (.mxl or .mscz)
+                is_zip = False
+                try:
+                    with open(tmp_path, 'rb') as fh:
+                        header = fh.read(4)
+                        if header[:2] == b'PK' or file.filename.lower().endswith(('.mxl', '.mscz')):
+                            is_zip = True
+                except Exception:
+                    is_zip = file.filename.lower().endswith(('.mxl', '.mscz'))
+
+                if is_zip:
+                    try:
+                        with zipfile.ZipFile(tmp_path, 'r') as zf:
+                            # Prefer explicit .xml/.musicxml files
+                            candidates = [n for n in zf.namelist(
+                            ) if n.lower().endswith(('.xml', '.musicxml'))]
+                            if not candidates:
+                                # fallback: consider any file inside archive
+                                candidates = zf.namelist()
+
+                            if not candidates:
+                                raise ValueError(
+                                    'Arquivo .mxl/.mscz não contém arquivos internos')
+
+                            # Strategy: prefer the candidate whose content contains
+                            # <score-partwise> or <score-timewise>; otherwise try each candidate until one parses.
+                            chosen_text = None
+                            parse_exception = None
+                            # If archive contains a container descriptor (MXL), try to read its rootfile and prefer it
+                            try:
+                                if 'META-INF/container.xml' in zf.namelist():
+                                    try:
+                                        with zf.open('META-INF/container.xml') as cf:
+                                            craw = cf.read()
+                                            try:
+                                                ctext = craw.decode('utf-8')
+                                            except Exception:
+                                                ctext = craw.decode(
+                                                    'latin-1', errors='replace')
+                                            # Parse XML to find rootfile path(s)
+                                            try:
+                                                import xml.etree.ElementTree as ET
+                                                croot = ET.fromstring(ctext)
+                                                rootfile_path = None
+                                                for elem in croot.iter():
+                                                    tag = elem.tag.lower()
+                                                    if tag.endswith('rootfile'):
+                                                        rootfile_path = elem.attrib.get(
+                                                            'full-path') or elem.attrib.get('full_path') or elem.attrib.get('path')
+                                                        if rootfile_path:
+                                                            break
+                                                if rootfile_path and rootfile_path in zf.namelist():
+                                                    # Move rootfile to the front of candidate list
+                                                    if rootfile_path in candidates:
+                                                        candidates.remove(
+                                                            rootfile_path)
+                                                    candidates.insert(
+                                                        0, rootfile_path)
+                                            except Exception:
+                                                pass
+                                    except Exception:
+                                        pass
+                            except Exception:
+                                pass
+
+                            # Build list of (name, text) for candidates (decoded)
+                            decoded_candidates = []
+                            import gzip
+                            import zlib
+                            for name in candidates:
+                                try:
+                                    with zf.open(name) as xmlf:
+                                        raw = xmlf.read()
+
+                                        # First, try common text decodings
+                                        text = None
+                                        for decoder in ('utf-8-sig', 'utf-8'):
+                                            try:
+                                                text = raw.decode(decoder)
+                                                break
+                                            except Exception:
+                                                continue
+                                        if text is None:
+                                            # last resort latin-1 with replacement
+                                            try:
+                                                text = raw.decode(
+                                                    'latin-1', errors='replace')
+                                            except Exception:
+                                                text = None
+
+                                        # If decoded text doesn't look like XML (no '<' early) but the raw looks compressed, try decompress
+                                        looks_like_xml = False
+                                        if isinstance(text, str) and '<' in text[:200].lower():
+                                            looks_like_xml = True
+
+                                        if not looks_like_xml:
+                                            # gzip magic
+                                            try:
+                                                if raw.startswith(b"\x1f\x8b"):
+                                                    decompressed = gzip.decompress(
+                                                        raw)
+                                                    try:
+                                                        text = decompressed.decode(
+                                                            'utf-8')
+                                                    except Exception:
+                                                        text = decompressed.decode(
+                                                            'latin-1', errors='replace')
+                                                    looks_like_xml = '<' in text[:200].lower(
+                                                    )
+                                            except Exception:
+                                                pass
+
+                                        if not looks_like_xml:
+                                            # try zlib (raw deflate)
+                                            try:
+                                                decompressed = zlib.decompress(
+                                                    raw)
+                                                try:
+                                                    text = decompressed.decode(
+                                                        'utf-8')
+                                                except Exception:
+                                                    text = decompressed.decode(
+                                                        'latin-1', errors='replace')
+                                                looks_like_xml = '<' in text[:200].lower(
+                                                )
+                                            except Exception:
+                                                pass
+
+                                        # Final sanitize: trim anything before first '<'
+                                        if isinstance(text, str) and '<' in text:
+                                            first_lt = text.find('<')
+                                            if first_lt > 0:
+                                                text = text[first_lt:]
+
+                                        # If still None or not XML-like, store as a placeholder (will be skipped by parser)
+                                        if text is None:
+                                            text = ''
+
+                                        decoded_candidates.append((name, text))
+                                except Exception:
+                                    # ignore unreadable entries
+                                    continue
+
+                            # prefer candidate containing MusicXML score tags
+                            preferred = None
+                            for name, text in decoded_candidates:
+                                low = text.lower()
+                                if '<score-partwise' in low or '<score-timewise' in low:
+                                    preferred = (name, text)
+                                    break
+
+                            # If none explicitly match, score candidates by likelihood (presence of <score or <part tags)
+                            if preferred is None and decoded_candidates:
+                                best = None
+                                best_score = -1
+                                for name, text in decoded_candidates:
+                                    low = text.lower()
+                                    score_count = low.count(
+                                        '<score') + low.count('<part') + low.count('<measure')
+                                    if score_count > best_score:
+                                        best_score = score_count
+                                        best = (name, text)
+                                if best_score > 0:
+                                    preferred = best
+
+                            candidates_to_try = []
+                            if preferred:
+                                candidates_to_try.append(preferred)
+                                # also try others if preferred fails
+                                for nt in decoded_candidates:
+                                    if nt[0] != preferred[0]:
+                                        candidates_to_try.append(nt)
+                            else:
+                                candidates_to_try = decoded_candidates
+
+                            for name, text in candidates_to_try:
+                                try:
+                                    score = converter.parse(io.StringIO(text))
+                                    chosen_text = text
+                                    # success
+                                    break
+                                except Exception as pex:
+                                    parse_exception = pex
+
+                            if score is None:
+                                # Provide diagnostic message including candidate names
+                                candidate_names = [
+                                    n for n, _ in decoded_candidates]
+                                # Write up to 3 candidate files to temp for debugging
+                                debug_paths = []
+                                for i, (name, text) in enumerate(decoded_candidates[:3]):
+                                    try:
+                                        safe_name = Path(name).name
+                                        with tempfile.NamedTemporaryFile(suffix=f'_{safe_name}.xml', delete=False, mode='w', encoding='utf-8') as tf:
+                                            tf.write(text)
+                                            debug_paths.append(tf.name)
+                                    except Exception:
+                                        continue
+
+                                raise ValueError(
+                                    f"Falha ao parsear arquivos internos do .mxl/.mscz. Tentadas: {candidate_names}; arquivos salvos para debug: {debug_paths}; último erro: {parse_exception}")
+
+                    except Exception as ze:
+                        # If zipped parsing fails, continue to other fallbacks
+                        score = None
+
+                if score is None:
+                    # Try standard parse from file path
+                    try:
+                        score = converter.parse(tmp_path)
+                    except Exception as e:
+                        # Fallback: tentar limpar BOM/bytes iniciais e reparsear em memória
+                        try:
+                            with open(tmp_path, 'rb') as f:
+                                raw = f.read()
+
+                            # Tentar decodificar com BOM handling
+                            try:
+                                text = raw.decode('utf-8-sig')
+                            except Exception:
+                                try:
+                                    text = raw.decode('utf-8')
+                                except Exception:
+                                    text = raw.decode(
+                                        'latin-1', errors='replace')
+
+                            # Remover qualquer prefixo antes do primeiro '<'
+                            first_lt = text.find('<')
+                            if first_lt > 0:
+                                text = text[first_lt:]
+
+                            score = converter.parse(io.StringIO(text))
+                        except Exception as e2:
+                            # Save debug artifacts (raw bytes and decoded text) to temp files for inspection
+                            debug_files = []
+                            try:
+                                # raw may exist in this scope
+                                if 'raw' in locals() and raw is not None:
+                                    with tempfile.NamedTemporaryFile(suffix='.bin', delete=False, mode='wb') as rf:
+                                        rf.write(raw)
+                                        debug_files.append(rf.name)
+                            except Exception:
+                                pass
+
+                            try:
+                                if 'text' in locals() and text is not None:
+                                    with tempfile.NamedTemporaryFile(suffix='.xml', delete=False, mode='w', encoding='utf-8') as tf2:
+                                        tf2.write(text)
+                                        debug_files.append(tf2.name)
+                            except Exception:
+                                pass
+
+                            try:
+                                os.unlink(tmp_path)
+                            except Exception:
+                                pass
+
+                            payload = {
+                                'error': f'Erro ao parsear MusicXML: {e}; fallback: {e2}'}
+                            if debug_files:
+                                payload['debug_files'] = debug_files
+                            return jsonify(payload), 400
+            except Exception as outer_e:
+                # Log completo do erro para facilitar depuração (inclui caminhos temporários criados)
+                try:
+                    app.logger.error(
+                        f'Erro ao processar arquivo MusicXML: {outer_e}', exc_info=True)
+                    print(
+                        f'[upload_xml] Erro ao processar arquivo MusicXML: {outer_e}')
+                except Exception:
+                    pass
+
+                # Garantir limpeza
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
+
+                # Try to include any debug files paths collected earlier
+                payload = {
+                    'error': f'Erro ao processar arquivo MusicXML: {outer_e}'}
+                try:
+                    debug_list = []
+                    if 'debug_paths' in locals() and isinstance(debug_paths, list):
+                        debug_list.extend(debug_paths)
+                    if 'debug_files' in locals() and isinstance(debug_files, list):
+                        debug_list.extend(debug_files)
+                    if debug_list:
+                        payload['debug_files'] = debug_list
+                except Exception:
+                    pass
+
+                return jsonify(payload), 400
+
+            # Coletar textos de cifra: TextExpression, ChordSymbol, lyrics
+            chord_texts = []
+            for el in score.recurse():
+                try:
+                    if isinstance(el, expressions.TextExpression):
+                        text = getattr(el, 'content', getattr(
+                            el, 'text', str(el))).strip()
+                        offset = el.getOffsetInHierarchy(score) if hasattr(
+                            el, 'getOffsetInHierarchy') else getattr(el, 'offset', 0)
+                        chord_texts.append({'text': text, 'offset': offset})
+                    elif isinstance(el, harmony.ChordSymbol):
+                        text = getattr(el, 'figure', str(el)).strip()
+                        offset = el.getOffsetInHierarchy(score) if hasattr(
+                            el, 'getOffsetInHierarchy') else getattr(el, 'offset', 0)
+                        chord_texts.append({'text': text, 'offset': offset})
+                    elif hasattr(el, 'lyrics') and getattr(el, 'lyrics'):
+                        for lyr in el.lyrics:
+                            text = getattr(lyr, 'text', str(lyr)).strip()
+                            offset = el.getOffsetInHierarchy(score) if hasattr(
+                                el, 'getOffsetInHierarchy') else getattr(el, 'offset', 0)
+                            chord_texts.append(
+                                {'text': text, 'offset': offset})
+                except Exception:
+                    continue
+
+            # Deduplicar por texto+offset e filtrar vazios
+            seen = set()
+            found = []
+            for c in chord_texts:
+                key = (c['text'], float(c['offset']))
+                if not c['text']:
+                    continue
+                if key in seen:
+                    continue
+                seen.add(key)
+                found.append(c)
+
+            if not found:
+                os.unlink(tmp_path)
+                return jsonify({'error': 'Nenhuma cifra detectada no MusicXML. Certifique-se de que as cifras estão como texto (MuseScore: Ctrl+T / Cmd+T).'}), 400
+
+            # Traduzir cada cifra usando o tradutor já inicializado
+            chord_entries = []
+            for item in found:
+                cipher = item['text']
+                try:
+                    hermeto = translator.translate_to_hermeto_chord(cipher)
+                    chord_entries.append(
+                        {'cipher': cipher, 'offset': item['offset'], 'hermeto': hermeto})
+                except Exception as e:
+                    # Ignorar cifras inválidas, mas continuar
+                    print(f"[upload_xml] Falha ao traduzir '{cipher}': {e}")
+                    continue
+
+            if not chord_entries:
+                os.unlink(tmp_path)
+                return jsonify({'error': 'Nenhuma cifra válida poderia ser decodificada.'}), 400
+
+            # Criar duas partes novas com os acordes decifrados
+            right_part = m21stream.Part()
+            right_part.partName = "Acordes Decifrados - Mão Direita"
+            left_part = m21stream.Part()
+            left_part.partName = "Acordes Decifrados - Mão Esquerda"
+
+            # Tentar copiar compasso/armadura do score original
+            try:
+                ts = None
+                ks = None
+                for el in score.recurse():
+                    if ts is None and el.__class__.__name__ == 'TimeSignature':
+                        ts = el
+                    if ks is None and el.__class__.__name__ == 'KeySignature':
+                        ks = el
+                    if ts and ks:
+                        break
+                if ks is not None:
+                    right_part.append(ks)
+                    left_part.append(ks)
+                if ts is not None:
+                    right_part.append(ts)
+                    left_part.append(ts)
+            except Exception:
+                pass
+
+            # Inserir acordes nas partes nos offsets detectados
+            # Primeiro, ordenar entradas por offset e calcular durações sensatas
+            chord_entries_sorted = sorted(
+                chord_entries, key=lambda e: float(e['offset']))
+
+            # determinar comprimento de compasso padrão (em quarterLength)
+            try:
+                ts_len = ts.barDuration.quarterLength if ts is not None else 4.0
+            except Exception:
+                ts_len = 4.0
+
+            offsets = [float(e['offset']) for e in chord_entries_sorted]
+
+            for idx, entry in enumerate(chord_entries_sorted):
+                herm = entry['hermeto']
+                offset = float(entry['offset'])
+
+                # calcular duração como distância até o próximo acorde ou até o fim do compasso
+                if idx + 1 < len(offsets):
+                    next_off = offsets[idx + 1]
+                    qlen = max(0.125, next_off - offset)
+                    # if next is equal or very close, fallback to ts_len
+                    if qlen < 0.001:
+                        qlen = ts_len
+                else:
+                    qlen = ts_len
+
+                # Mão direita
+                try:
+                    rh_pitches = [
+                        f"{n.name}{n.octave}" for n in herm.right_hand_notes]
+                except Exception:
+                    rh_pitches = []
+
+                if rh_pitches:
+                    if len(rh_pitches) == 1:
+                        rn = m21note.Note(rh_pitches[0], quarterLength=qlen)
+                        right_part.insert(offset, rn)
+                    else:
+                        ch = m21chord.Chord(rh_pitches, quarterLength=qlen)
+                        right_part.insert(offset, ch)
+                else:
+                    right_part.insert(offset, m21note.Rest(quarterLength=qlen))
+
+                # Mão esquerda
+                try:
+                    lh_pitches = [
+                        f"{n.name}{n.octave}" for n in herm.left_hand_notes]
+                except Exception:
+                    lh_pitches = []
+
+                if lh_pitches:
+                    if len(lh_pitches) == 1:
+                        ln = m21note.Note(lh_pitches[0], quarterLength=qlen)
+                        left_part.insert(offset, ln)
+                    else:
+                        ch2 = m21chord.Chord(lh_pitches, quarterLength=qlen)
+                        left_part.insert(offset, ch2)
+                else:
+                    left_part.insert(offset, m21note.Rest(quarterLength=qlen))
+
+            # Anexar as partes novas ao score original
+            try:
+                score.append(right_part)
+                score.append(left_part)
+            except Exception as e:
+                print(f"[upload_xml] Erro ao anexar partes: {e}")
+
+            # Exportar para MusicXML temporariamente
+            with tempfile.NamedTemporaryFile(suffix='.xml', delete=False) as out_tmp:
+                out_path = out_tmp.name
+
+            try:
+                score.write('musicxml', fp=out_path)
+            except Exception as e:
+                os.unlink(tmp_path)
+                if os.path.exists(out_path):
+                    os.unlink(out_path)
+                return jsonify({'error': f'Erro ao gerar MusicXML de saída: {e}'}), 500
+
+            # Limpar arquivo de entrada
+            os.unlink(tmp_path)
+
+            # Enviar o arquivo gerado
+            return send_file(out_path, as_attachment=True, mimetype='application/xml', download_name=f'augmented_{file.filename}')
+
+        except Exception as e:
+            return jsonify({'error': f'Erro no processamento do upload: {e}'}), 500
 
     # Error handlers
     @app.errorhandler(404)
