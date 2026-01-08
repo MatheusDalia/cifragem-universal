@@ -403,6 +403,16 @@ class IntervalConverter:
                     self.base_intervals['7'],           # 7m (Bb)
                     self.base_intervals['9']            # 9M (D)
                 ]
+            # Caso específico A-79: tríade menor + 7 e 9
+            elif set(intervals_list) == {'7', '9'}:
+                # A-79 = tríade menor (1-3m-5J) + 7m + 9M
+                extensions = [
+                    self.base_intervals['1'],           # 1 (A)
+                    Interval(3, 'm', 3, '3ª menor'),    # 3m (C)
+                    self.base_intervals['5'],           # 5J (E)
+                    self.base_intervals['7'],           # 7m (G)
+                    self.base_intervals['9']            # 9M (B)
+                ]
             elif not intervals_list:
                 # Tríade menor simples
                 extensions = [
@@ -425,12 +435,23 @@ class IntervalConverter:
 
         # Acordes dominantes com alterações (ex: F#79+13-, A5+7)
         elif chord_type == 'dominante':
+            intervals_list = part_data.get('intervals', [])
+
+            # Caso específico F79: tétrade dominante + 9M
+            if set(intervals_list) == {'7', '9'}:
+                # F79 = tríade maior (1-3M-5J) + 7m + 9M
+                extensions = [
+                    self.base_intervals['1'],           # 1 (F)
+                    self.base_intervals['3'],           # 3M (A)
+                    self.base_intervals['5'],           # 5J (C)
+                    self.base_intervals['7'],           # 7m (Eb)
+                    self.base_intervals['9']            # 9M (G)
+                ]
             # Para baixo em acordes sobrepostos: apenas fundamental + intervalos explícitos
-            if context == 'baixo':
+            elif context == 'baixo':
                 extensions = [self.base_intervals['1']]  # Sempre fundamental
 
                 # Adicionar apenas os intervalos explícitos
-                intervals_list = part_data.get('intervals', [])
                 for interval_str in intervals_list:
                     interval = self._parse_interval_string(
                         interval_str, 'dominante')
@@ -446,7 +467,6 @@ class IntervalConverter:
                 ]
 
                 # Adicionar intervalos parseados (preservar 9-, 11+, 13, etc.)
-                intervals_list = part_data.get('intervals', [])
                 for interval_str in intervals_list:
                     interval = self._parse_interval_string(
                         interval_str, 'dominante')

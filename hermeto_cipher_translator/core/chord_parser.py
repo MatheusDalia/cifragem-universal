@@ -198,6 +198,24 @@ class ChordParser:
             print(f"[chord_parser] Tipo: maior (hermético 7+)")
             return 'maior'
 
+        # Padrão específico 679 ou -79 (acordes maiores/menores com extensões)
+        if re.match(r'^-?679$', remaining):
+            if remaining.startswith('-'):
+                print(f"[chord_parser] Tipo: menor (padrão -679)")
+                return 'menor'
+            else:
+                print(f"[chord_parser] Tipo: maior (padrão 679)")
+                return 'maior'
+
+        if re.match(r'^-79$', remaining):
+            print(f"[chord_parser] Tipo: menor (padrão -79)")
+            return 'menor'
+
+        # Padrão específico 79 (dominante com 7 e 9)
+        if re.match(r'^79$', remaining):
+            print(f"[chord_parser] Tipo: dominante (padrão 79)")
+            return 'dominante'
+
         # Acorde menor (começa com -)
         if remaining.startswith('-'):
             # Meio-diminuto se tem -5-

@@ -30,6 +30,15 @@ class StaffDistributor:
         # Distribuição baseada no tipo de acorde
         if chord_info.get('has_slash', False):
             distribution = self._distribute_slash_chord(note_data, chord_info)
+        elif chord_type == 'menor' and self._is_minor_79_pattern(chord_info):
+            distribution = self._distribute_minor_79_pattern(
+                note_data, root_note)
+        elif chord_type == 'maior' and self._is_major_679_pattern(chord_info):
+            distribution = self._distribute_major_679_pattern(
+                note_data, root_note)
+        elif chord_type == 'dominante' and self._is_dominant_79_pattern(chord_info):
+            distribution = self._distribute_dominant_79_pattern(
+                note_data, root_note)
         elif chord_type == 'maior':
             distribution = self._distribute_major_chord(note_data, root_note)
         elif chord_type == 'menor' and self._is_c_minor_479_pattern(chord_info):
@@ -203,6 +212,152 @@ class StaffDistributor:
                 'left_hand': [],
                 'right_hand': all_notes
             }
+
+    def _distribute_minor_79_pattern(self, note_data: Dict, root_note: str) -> Dict:
+        """Distribuição para X-79: tríade menor na esquerda, 7 e 9 na direita"""
+        all_notes = note_data['right_hand']
+        bass_notes = []
+        treble_notes = []
+
+        note_map = {
+            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+            'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+            'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        }
+
+        root_val = note_map.get(root_note, 0)
+        for note in all_notes:
+            val = note_map.get(note.name, -1)
+            interval = (val - root_val) % 12
+
+            # Mão esquerda: tônica (0), terça menor (3), quinta justa (7)
+            if interval in [0, 3, 7]:
+                bass_notes.append(note)
+            else:
+                # Mão direita: intervalos 7 e 9 (sétima menor=10, nona maior=2)
+                treble_notes.append(note)
+
+        # Descer mão esquerda uma oitava
+        adjusted_bass_notes = []
+        for note in bass_notes:
+            if note.octave > 1:
+                lower_note = Note(
+                    name=note.name,
+                    octave=note.octave - 1,
+                    midi_number=note.midi_number - 12,
+                    enharmonic=getattr(note, 'enharmonic', note.name)
+                )
+                adjusted_bass_notes.append(lower_note)
+            else:
+                adjusted_bass_notes.append(note)
+
+        # Descer mão direita uma oitava
+        adjusted_treble_notes = []
+        for note in treble_notes:
+            if note.octave > 1:
+                lower_note = Note(
+                    name=note.name,
+                    octave=note.octave - 1,
+                    midi_number=note.midi_number - 12,
+                    enharmonic=getattr(note, 'enharmonic', note.name)
+                )
+                adjusted_treble_notes.append(lower_note)
+            else:
+                adjusted_treble_notes.append(note)
+
+        return {
+            'left_hand': adjusted_bass_notes,
+            'right_hand': adjusted_treble_notes
+        }
+
+    def _distribute_dominant_79_pattern(self, note_data: Dict, root_note: str) -> Dict:
+        """Distribuição para X79 dominante: tríade maior na esquerda, 7 e 9 na direita"""
+        all_notes = note_data['right_hand']
+        bass_notes = []
+        treble_notes = []
+
+        note_map = {
+            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+            'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+            'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        }
+
+        root_val = note_map.get(root_note, 0)
+        for note in all_notes:
+            val = note_map.get(note.name, -1)
+            interval = (val - root_val) % 12
+
+            # Mão esquerda: tríade maior (0, 4, 7)
+            if interval in [0, 4, 7]:
+                bass_notes.append(note)
+            else:
+                # Mão direita: intervalos 7 e 9 (sétima menor=10, nona maior=2)
+                treble_notes.append(note)
+
+        # Descer mão esquerda uma oitava
+        adjusted_bass_notes = []
+        for note in bass_notes:
+            if note.octave > 1:
+                lower_note = Note(
+                    name=note.name,
+                    octave=note.octave - 1,
+                    midi_number=note.midi_number - 12,
+                    enharmonic=getattr(note, 'enharmonic', note.name)
+                )
+                adjusted_bass_notes.append(lower_note)
+            else:
+                adjusted_bass_notes.append(note)
+
+        return {
+            'left_hand': adjusted_bass_notes,
+            'right_hand': treble_notes
+        }
+
+    def _distribute_major_679_pattern(self, note_data: Dict, root_note: str) -> Dict:
+        """Distribuição para X679: tônica + terça maior na esquerda, 6, 7 e 9 na direita (excluindo quinta)"""
+        all_notes = note_data['right_hand']
+        bass_notes = []
+        treble_notes = []
+
+        note_map = {
+            'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+            'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+            'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+        }
+
+        root_val = note_map.get(root_note, 0)
+        for note in all_notes:
+            val = note_map.get(note.name, -1)
+            interval = (val - root_val) % 12
+
+            # Mão esquerda: tônica (0) e terça maior (4)
+            if interval in [0, 4]:
+                bass_notes.append(note)
+            # Pular quinta justa (7) - não incluir em nenhuma mão
+            elif interval == 7:
+                continue
+            else:
+                # Mão direita: intervalos 6, 7 e 9 (sexta=9, sétima=10/11, nona=2)
+                treble_notes.append(note)
+
+        # Descer mão esquerda uma oitava
+        adjusted_bass_notes = []
+        for note in bass_notes:
+            if note.octave > 1:
+                lower_note = Note(
+                    name=note.name,
+                    octave=note.octave - 1,
+                    midi_number=note.midi_number - 12,
+                    enharmonic=getattr(note, 'enharmonic', note.name)
+                )
+                adjusted_bass_notes.append(lower_note)
+            else:
+                adjusted_bass_notes.append(note)
+
+        return {
+            'left_hand': adjusted_bass_notes,
+            'right_hand': treble_notes
+        }
 
     def _distribute_c_minor_479_pattern(self, note_data: Dict, root_note: str) -> Dict:
         """Distribuição específica para C-479"""
@@ -449,13 +604,80 @@ class StaffDistributor:
             'right_hand': []
         }
 
+    def _is_dominant_79_pattern(self, chord_info: Dict) -> bool:
+        """Verifica se é padrão X79 dominante (apenas 7 e 9, sem alterações)"""
+        try:
+            intervals = chord_info.get('right_hand', {}).get('intervals', [])
+            # Extrair apenas os números dos intervalos
+            clean_intervals = []
+            for i in intervals:
+                clean = ''.join(c for c in str(i) if c.isdigit())
+                if clean:
+                    clean_intervals.append(clean)
+
+            # Verificar se é exatamente 7 e 9 (sem + ou -)
+            return set(clean_intervals) == {'7', '9'} and set(intervals) == {'7', '9'}
+        except (KeyError, TypeError):
+            return False
+
+    def _is_minor_79_pattern(self, chord_info: Dict) -> bool:
+        """Verifica se é padrão X-79 (menor com 7 e 9)"""
+        # Pegar intervalos da parte right_hand do chord_info parseado
+        right_hand_data = chord_info.get('right_hand', {})
+        if isinstance(right_hand_data, dict):
+            intervals = right_hand_data.get('intervals', [])
+        else:
+            return False
+
+        chord_type = chord_info.get('chord_type', '')
+        # Filtrar apenas os números (sem + ou -)
+        interval_numbers = []
+        for interval in intervals:
+            # Extrair apenas o número do intervalo (ex: '7+' -> '7', '9' -> '9')
+            num = ''.join(c for c in str(interval) if c.isdigit())
+            if num:
+                interval_numbers.append(num)
+
+        return chord_type == 'menor' and set(interval_numbers) == {'7', '9'}
+
+    def _is_major_679_pattern(self, chord_info: Dict) -> bool:
+        """Verifica se é o padrão X679 (maior com 6, 7 e 9)"""
+        # Pegar intervalos da parte right_hand do chord_info parseado
+        right_hand_data = chord_info.get('right_hand', {})
+        if isinstance(right_hand_data, dict):
+            intervals = right_hand_data.get('intervals', [])
+        else:
+            return False
+
+        chord_type = chord_info.get('chord_type', '')
+        # Filtrar apenas os números (sem + ou -)
+        interval_numbers = []
+        for interval in intervals:
+            # Extrair apenas o número do intervalo (ex: '6' -> '6', '7' -> '7', '9' -> '9')
+            num = ''.join(c for c in str(interval) if c.isdigit())
+            if num:
+                interval_numbers.append(num)
+
+        return chord_type == 'maior' and set(interval_numbers) == {'6', '7', '9'}
+
     def _is_c_minor_479_pattern(self, chord_info: Dict) -> bool:
         """Verifica se é o padrão X-479 (menor com 4, 7, 9) para qualquer tônica"""
-        # Aceita qualquer acorde menor com intervalos 4, 7, 9
-        intervals = chord_info.get('right_hand', {}).get('intervals', [])
-        # Precisa ser acorde menor e ter exatamente esses intervalos
+        # Pegar intervalos da parte right_hand do chord_info parseado
+        right_hand_data = chord_info.get('right_hand', {})
+        if isinstance(right_hand_data, dict):
+            intervals = right_hand_data.get('intervals', [])
+        else:
+            return False
+
         chord_type = chord_info.get('chord_type', '')
-        return chord_type == 'menor' and set(intervals) == {'4', '7', '9'}
+        # Filtrar apenas os números (sem + ou -)
+        interval_numbers = []
+        for interval in intervals:
+            num = ''.join(c for c in str(interval) if c.isdigit())
+            if num:
+                interval_numbers.append(num)
+
+        return chord_type == 'menor' and set(interval_numbers) == {'4', '7', '9'}
 
     def _is_perfect_fifth(self, root_name: str, note_name: str) -> bool:
         """Verifica se uma nota é a quinta justa"""
